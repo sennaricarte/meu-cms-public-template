@@ -1,0 +1,50 @@
+---
+/**
+ * JsonLd.astro
+ *
+ * Componente dedicado para injetar JSON-LD (Schema.org) no <head>.
+ *
+ * Uso básico — post de blog:
+ * ---
+ * import JsonLd from '../components/JsonLd.astro';
+ * import { buildBlogPostingSchema, buildBreadcrumbSchema } from '../lib/schema';
+ *
+ * const nodes = [
+ *   buildBlogPostingSchema({ ... }),
+ *   buildBreadcrumbSchema({ ... }),
+ * ];
+ * ---
+ * <JsonLd nodes={nodes} />
+ *
+ * O componente agrupa todos os nós em um único bloco `@graph`, que é a forma
+ * recomendada pelo Google para combinar múltiplos tipos de schema em uma página.
+ * Referência: https://developers.google.com/search/docs/appearance/structured-data/sd-policies
+ */
+import type { SchemaNode } from '../lib/schema';
+
+interface Props {
+	/**
+	 * Um ou mais nós Schema.org.
+	 * Cada nó deve ser criado pelos builders de `src/lib/schema.ts`.
+	 * Não inclua `@context` nos nós — ele é adicionado automaticamente.
+	 */
+	nodes: SchemaNode | SchemaNode[];
+}
+
+const { nodes } = Astro.props;
+
+const nodeArray = Array.isArray(nodes) ? nodes : [nodes];
+
+/**
+ * Estrutura @graph: uma única tag <script> com todos os schemas da página.
+ * Mais eficiente e preferível a múltiplas tags <script> separadas.
+ */
+const graph = {
+	'@context': 'https://schema.org',
+	'@graph':    nodeArray,
+};
+
+const json = JSON.stringify(graph);
+---
+
+<script type="application/ld+json" set:html={json} />

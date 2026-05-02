@@ -1,0 +1,434 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { readdir, stat } from 'node:fs/promises';
+import { join } from 'node:path';
+
+export const prerender = false;
+
+type MediaItem = {
+	name: string;
+	url: string;
+	size: number;
+	updatedAt: string;
+};
+
+const uploadsDir = join(process.cwd(), 'public', 'uploads');
+/** jpg, jpeg, png, webp, gif, svg */
+const IMAGE_EXT = /\.(jpe?g|png|webp|gif|svg)$/i;
+
+let initialImages: MediaItem[] = [];
+try {
+	const names = await readdir(uploadsDir);
+	const rows = await Promise.all(
+		names
+			.filter((name) => IMAGE_EXT.test(name) && !name.startsWith('.'))
+			.map(async (name) => {
+				const abs = join(uploadsDir, name);
+				const info = await stat(abs);
+				return {
+					name,
+					url: `/uploads/${encodeURIComponent(name)}`,
+					size: info.size,
+					updatedAt: info.mtime.toISOString(),
+				} satisfies MediaItem;
+			}),
+	);
+	initialImages = rows.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
+} catch {
+	initialImages = [];
+}
+---
+
+<DashboardLayout title="Central de Mídia — Admin" heading="Central de mídia">
+	<div class="space-y-6">
+		<p class="text-sm text-neutral-600">
+			Arquivos em <code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200">public/uploads/</code>.
+		</p>
+			<section class="rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm mb-6" aria-labelledby="media-upload-heading">
+				<h2 id="media-upload-heading" class="text-lg font-semibold text-neutral-900 mb-3">Upload</h2>
+				<p class="text-sm text-neutral-600 mb-4">
+					Arraste imagens para a zona abaixo ou clique para escolher. O servidor aceita
+					<strong>JPEG, PNG, WebP e GIF</strong> e grava <strong>sempre</strong> um ficheiro
+					<strong>WebP</strong> otimizado (máx. 1200px de largura) em <code class="text-xs bg-neutral-100 px-1 rounded">public/uploads/</code>.
+				</p>
+				<input
+					id="media-file-input"
+					type="file"
+					accept="image/jpeg,image/png,image/webp,image/gif"
+					class="sr-only"
+					aria-hidden="true"
+					tabindex="-1"
+				/>
+				<button
+					type="button"
+					id="media-dropzone"
+					class="flex w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-center transition-colors hover:border-blue-400 hover:bg-blue-50/40 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
+					aria-label="Zona de upload: arrastar imagens ou ativar para escolher ficheiro"
+				>
+					<span class="text-sm font-medium text-neutral-800">Arraste e largue imagens aqui</span>
+					<span class="text-xs text-neutral-500">ou clique para abrir o explorador de ficheiros</span>
+				</button>
+				<p id="media-upload-status" class="text-sm text-neutral-600 mt-3 min-h-[1.25rem]" role="status" aria-live="polite"></p>
+			</section>
+
+			<section class="rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm" aria-labelledby="media-library-heading">
+				<div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-4">
+					<div>
+						<h2 id="media-library-heading" class="text-lg font-semibold text-neutral-900">Biblioteca</h2>
+						<p id="media-library-count" class="text-sm text-neutral-500 mt-1 tabular-nums">
+							{initialImages.length} imagem(ns) no total
+						</p>
+					</div>
+					<div class="w-full sm:max-w-xs shrink-0">
+						<label for="media-search" class="block text-sm font-medium text-neutral-700 mb-1">Buscar por nome</label>
+						<input
+							id="media-search"
+							type="search"
+							autocomplete="off"
+							placeholder="Filtrar pelo nome do ficheiro…"
+							class="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-blue-500 focus:outline focus:outline-2 focus:outline-blue-600"
+							aria-controls="media-grid"
+						/>
+					</div>
+				</div>
+				<div
+					id="media-grid"
+					class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4"
+					role="list"
+				>
+				</div>
+				<p id="media-empty" class="hidden text-sm text-neutral-500 italic py-8 text-center">
+					Nenhuma imagem encontrada. Faça o primeiro upload acima.
+				</p>
+				<p id="media-empty-filter" class="hidden text-sm text-neutral-500 italic py-8 text-center">
+					Nenhuma imagem corresponde à pesquisa.
+				</p>
+			</section>
+	</div>
+
+	<div
+		id="media-modal"
+		class="fixed inset-0 z-50 hidden"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="media-modal-title"
+		aria-hidden="true"
+	>
+		<div id="media-modal-backdrop" class="absolute inset-0 bg-black/50" tabindex="-1"></div>
+		<div class="absolute inset-0 p-4 sm:p-8 flex items-center justify-center pointer-events-none">
+			<div
+				class="pointer-events-auto w-full max-w-3xl rounded-xl bg-white shadow-2xl border border-neutral-200 overflow-hidden"
+				role="document"
+			>
+				<div class="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_320px]">
+					<div class="bg-neutral-100 flex items-center justify-center p-4 min-h-[260px]">
+						<img id="modal-image" src="" alt="" class="max-h-[70vh] w-auto max-w-full rounded object-contain" />
+					</div>
+					<aside class="p-4 sm:p-5 border-t md:border-t-0 md:border-l border-neutral-200">
+						<div class="flex items-start justify-between gap-3">
+							<h3 id="media-modal-title" class="text-base font-semibold text-neutral-900">Pré-visualização</h3>
+							<button
+								id="media-modal-close"
+								type="button"
+								class="rounded border border-neutral-300 px-2 py-1 text-sm hover:bg-neutral-50 focus:outline focus:outline-2 focus:outline-blue-600"
+								aria-label="Fechar modal"
+							>
+								Fechar
+							</button>
+						</div>
+						<div class="mt-4 space-y-3 text-sm">
+							<div>
+								<p class="text-xs font-semibold text-neutral-500 uppercase">Nome</p>
+								<p id="modal-name" class="break-all text-neutral-800"></p>
+							</div>
+							<div>
+								<p class="text-xs font-semibold text-neutral-500 uppercase">URL</p>
+								<p id="modal-url" class="break-all text-blue-700 font-mono text-xs"></p>
+							</div>
+							<div class="flex flex-wrap gap-2 pt-1">
+								<button
+									id="btn-copy-url"
+									type="button"
+									class="rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium hover:bg-neutral-50 focus:outline focus:outline-2 focus:outline-blue-600"
+								>
+									Copiar URL
+								</button>
+								<button
+									id="btn-delete-media"
+									type="button"
+									class="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 focus:outline focus:outline-2 focus:outline-red-600"
+								>
+									Excluir
+								</button>
+							</div>
+							<p id="modal-status" class="text-xs text-neutral-600 min-h-[1rem]" role="status" aria-live="polite"></p>
+						</div>
+					</aside>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script define:vars={{ initialImages }}>
+		import { actions } from 'astro:actions';
+
+		let images = structuredClone(initialImages);
+		let selected = null;
+		let filterQuery = '';
+
+		const grid = document.getElementById('media-grid');
+		const empty = document.getElementById('media-empty');
+		const emptyFilter = document.getElementById('media-empty-filter');
+		const libraryCount = document.getElementById('media-library-count');
+		const dropzone = document.getElementById('media-dropzone');
+		const uploadInput = document.getElementById('media-file-input');
+		const uploadStatus = document.getElementById('media-upload-status');
+		const searchInput = document.getElementById('media-search');
+
+		const modal = document.getElementById('media-modal');
+		const modalBackdrop = document.getElementById('media-modal-backdrop');
+		const modalClose = document.getElementById('media-modal-close');
+		const modalImage = document.getElementById('modal-image');
+		const modalName = document.getElementById('modal-name');
+		const modalUrl = document.getElementById('modal-url');
+		const modalStatus = document.getElementById('modal-status');
+		const btnCopyUrl = document.getElementById('btn-copy-url');
+		const btnDelete = document.getElementById('btn-delete-media');
+
+		function fmtBytes(bytes) {
+			if (bytes < 1024) return `${bytes} B`;
+			const kb = bytes / 1024;
+			if (kb < 1024) return `${kb < 10 ? kb.toFixed(1) : Math.round(kb)} KB`;
+			const mb = kb / 1024;
+			return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
+		}
+
+		function fmtDate(iso) {
+			const d = new Date(iso);
+			return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+		}
+
+		function filteredImages() {
+			const q = filterQuery.trim().toLowerCase();
+			if (!q) return images;
+			return images.filter((img) => img.name.toLowerCase().includes(q));
+		}
+
+		function updateLibraryCountLabel(total, shown) {
+			if (!libraryCount) return;
+			if (!total) {
+				libraryCount.textContent = '0 imagens no total';
+				return;
+			}
+			if (filterQuery.trim() && shown !== total) {
+				libraryCount.textContent = `A mostrar ${shown} de ${total} imagem(ns)`;
+			} else {
+				libraryCount.textContent = `${total} imagem(ns) no total`;
+			}
+		}
+
+		function renderGrid() {
+			if (!grid) return;
+			grid.replaceChildren();
+			empty?.classList.add('hidden');
+			emptyFilter?.classList.add('hidden');
+
+			const total = images.length;
+			if (!total) {
+				empty?.classList.remove('hidden');
+				updateLibraryCountLabel(0, 0);
+				return;
+			}
+
+			const list = filteredImages();
+			updateLibraryCountLabel(total, list.length);
+
+			if (!list.length) {
+				emptyFilter?.classList.remove('hidden');
+				return;
+			}
+
+			for (const img of list) {
+				const card = document.createElement('button');
+				card.type = 'button';
+				card.className =
+					'group text-left rounded-lg overflow-hidden border border-neutral-200 bg-white hover:shadow-md transition-shadow focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600';
+				card.setAttribute('role', 'listitem');
+				card.setAttribute('aria-label', `Abrir ${img.name}`);
+				const sizeBadge = fmtBytes(img.size);
+				const safeName = img.name.replace(/"/g, '&quot;');
+				card.innerHTML = `
+					<div class="relative aspect-square bg-neutral-100 overflow-hidden">
+						<img src="${img.url}" alt="" class="h-full w-full object-cover" loading="lazy" decoding="async" />
+						<span class="absolute bottom-2 right-2 rounded-md bg-black/75 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white tabular-nums" aria-label="Tamanho do ficheiro ${sizeBadge}">
+							${sizeBadge}
+						</span>
+					</div>
+					<div class="p-2 border-t border-neutral-100">
+						<p class="text-xs font-medium text-neutral-800 truncate" title="${safeName}">${img.name}</p>
+						<p class="text-[11px] text-neutral-500 mt-1">${fmtDate(img.updatedAt)}</p>
+					</div>
+				`;
+				card.addEventListener('click', () => openModal(img));
+				grid.appendChild(card);
+			}
+		}
+
+		function absoluteUrl(path) {
+			try {
+				return new URL(path, window.location.origin).href;
+			} catch {
+				return path;
+			}
+		}
+
+		function openModal(item) {
+			selected = item;
+			if (modalImage instanceof HTMLImageElement) {
+				modalImage.src = item.url;
+				modalImage.alt = `Pré-visualização ampliada: ${item.name}`;
+			}
+			if (modalName) modalName.textContent = item.name;
+			if (modalUrl) modalUrl.textContent = absoluteUrl(item.url);
+			if (modalStatus) modalStatus.textContent = '';
+			modal?.classList.remove('hidden');
+			modal?.setAttribute('aria-hidden', 'false');
+			modalClose?.focus();
+		}
+
+		function closeModal() {
+			selected = null;
+			modal?.classList.add('hidden');
+			modal?.setAttribute('aria-hidden', 'true');
+			if (modalImage instanceof HTMLImageElement) {
+				modalImage.removeAttribute('src');
+				modalImage.alt = '';
+			}
+		}
+
+		modalClose?.addEventListener('click', closeModal);
+		modalBackdrop?.addEventListener('click', closeModal);
+
+		document.addEventListener('keydown', (e) => {
+			if (e.key !== 'Escape') return;
+			if (modal && !modal.classList.contains('hidden')) closeModal();
+		});
+
+		btnCopyUrl?.addEventListener('click', async () => {
+			if (!selected) return;
+			const full = absoluteUrl(selected.url);
+			try {
+				await navigator.clipboard.writeText(full);
+				if (modalStatus) modalStatus.textContent = 'URL copiada para a área de transferência.';
+			} catch {
+				if (modalStatus) modalStatus.textContent = 'Não foi possível copiar automaticamente.';
+			}
+		});
+
+		btnDelete?.addEventListener('click', async () => {
+			if (!selected) return;
+			if (!confirm(`Excluir o ficheiro "${selected.name}"? Esta ação não pode ser desfeita.`)) return;
+			if (modalStatus) modalStatus.textContent = 'A excluir…';
+			const { error } = await actions.deleteMediaFile({ filename: selected.name });
+			if (error) {
+				if (modalStatus) modalStatus.textContent = error.message;
+				return;
+			}
+			images = images.filter((img) => img.name !== selected.name);
+			renderGrid();
+			closeModal();
+		});
+
+		async function uploadFiles(fileList) {
+			const files = Array.from(fileList ?? []).filter((f) => f && f.size > 0);
+			if (!files.length) {
+				if (uploadStatus) uploadStatus.textContent = 'Nenhum ficheiro válido.';
+				return;
+			}
+			if (uploadStatus) uploadStatus.textContent = `A enviar ${files.length} ficheiro(s)…`;
+			let ok = 0;
+			for (const file of files) {
+				const fd = new FormData();
+				fd.append('image', file);
+				fd.append('title', file.name.replace(/\.[^.]+$/, ''));
+				try {
+					const r = await fetch('/api/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
+					const payload = await r.json();
+					if (!r.ok || !payload?.url) {
+						if (uploadStatus) uploadStatus.textContent = payload?.error ?? `Falha no upload: ${file.name}`;
+						return;
+					}
+					const url = String(payload.url);
+					const name =
+						typeof payload.filename === 'string' && payload.filename
+							? payload.filename
+							: decodeURIComponent(url.split('/').pop() ?? file.name);
+					const storedSize =
+						typeof payload.size === 'number' && Number.isFinite(payload.size) ? payload.size : file.size;
+					images.unshift({
+						name,
+						url,
+						size: storedSize,
+						updatedAt: new Date().toISOString(),
+					});
+					ok++;
+				} catch (err) {
+					if (uploadStatus) {
+						uploadStatus.textContent =
+							err instanceof Error ? err.message : 'Erro de rede no upload.';
+					}
+					return;
+				}
+			}
+			renderGrid();
+			if (uploadInput instanceof HTMLInputElement) uploadInput.value = '';
+			if (uploadStatus) uploadStatus.textContent = ok === 1 ? 'Upload concluído.' : `${ok} uploads concluídos.`;
+		}
+
+		dropzone?.addEventListener('click', () => {
+			uploadInput instanceof HTMLInputElement && uploadInput.click();
+		});
+
+		dropzone?.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' || e.key === ' ') {
+				e.preventDefault();
+				uploadInput instanceof HTMLInputElement && uploadInput.click();
+			}
+		});
+
+		['dragenter', 'dragover'].forEach((evt) => {
+			dropzone?.addEventListener(evt, (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				dropzone.classList.add('border-blue-500', 'bg-blue-50');
+			});
+		});
+
+		['dragleave', 'drop'].forEach((evt) => {
+			dropzone?.addEventListener(evt, (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				dropzone?.classList.remove('border-blue-500', 'bg-blue-50');
+			});
+		});
+
+		dropzone?.addEventListener('drop', (e) => {
+			const dt = e.dataTransfer;
+			if (!dt?.files?.length) return;
+			void uploadFiles(dt.files);
+		});
+
+		uploadInput?.addEventListener('change', () => {
+			if (uploadInput instanceof HTMLInputElement && uploadInput.files?.length) {
+				void uploadFiles(uploadInput.files);
+			}
+		});
+
+		searchInput?.addEventListener('input', () => {
+			filterQuery = searchInput instanceof HTMLInputElement ? searchInput.value : '';
+			renderGrid();
+		});
+
+		renderGrid();
+	</script>
+</DashboardLayout>

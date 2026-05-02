@@ -1,0 +1,106 @@
+{
+	"version": 3,
+	"routes": [
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "^/_astro/(.*)$",
+			"headers": {
+				"cache-control": "public, max-age=31536000, immutable"
+			},
+			"continue": true
+		},
+		{
+			"src": "^/admin/dashboard$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/editor$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/editor-server$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/login$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/logout$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/media$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/menus$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/page-editor$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/pages-list$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin/taxonomies$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/admin$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/_actions(?:/(.*?))?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/list-uploads$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/upload$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/api/upload-image$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/_server-islands/([^/]+?)/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/_image/?$",
+			"dest": "_render"
+		},
+		{
+			"src": "^/404/?$",
+			"dest": "/_isr?x_astro_path=$0"
+		},
+		{
+			"src": "^/.*$",
+			"dest": "_render",
+			"status": 404
+		}
+	],
+	"images": {
+		"sizes": [
+			640,
+			750,
+			828,
+			1080,
+			1200,
+			1920,
+			2048,
+			3840
+		],
+		"domains": [],
+		"remotePatterns": []
+	}
+}

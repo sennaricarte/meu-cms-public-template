@@ -1,0 +1,92 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+	post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+---
+
+<a
+	href={`/blog/${post.id}/`}
+	class="group flex w-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+	aria-label={`Ler artigo: ${post.data.title}`}
+>
+	{
+		post.data.heroImage ? (
+			<div class="aspect-[16/10] overflow-hidden bg-gray-100">
+				<Image
+					src={post.data.heroImage}
+					alt={post.data.title}
+					width={640}
+					height={400}
+					format="webp"
+					quality="mid"
+					class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+				/>
+			</div>
+		) : (
+			<div
+				class="flex aspect-[16/10] items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100"
+				aria-hidden="true"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="h-10 w-10 text-blue-200"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+				>
+					<path
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						stroke-width="1.5"
+						d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+					/>
+				</svg>
+			</div>
+		)
+	}
+
+	<div class="flex flex-1 flex-col space-y-4 p-6">
+		{
+			post.data.tags && post.data.tags.length > 0 && (
+				<div class="flex flex-wrap gap-1.5" aria-label="Tags do artigo">
+					{post.data.tags.slice(0, 2).map((tag) => (
+						<span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-[var(--accent)]">
+							#{tag}
+						</span>
+					))}
+				</div>
+			)
+		}
+
+		<h3 class="line-clamp-2 text-base font-bold leading-snug text-gray-900 transition-colors duration-200 group-hover:text-[var(--accent)]">
+			{post.data.title}
+		</h3>
+
+		<p class="line-clamp-2 flex-1 text-sm leading-relaxed text-gray-500">
+			{post.data.description}
+		</p>
+
+		<div class="flex items-center gap-2 border-t border-gray-50 pt-3 text-xs text-gray-400">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-3.5 w-3.5 shrink-0"
+				viewBox="0 0 20 20"
+				fill="currentColor"
+				aria-hidden="true"
+			>
+				<path
+					fill-rule="evenodd"
+					d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+					clip-rule="evenodd"
+				/>
+			</svg>
+			<FormattedDate date={post.data.pubDate} />
+		</div>
+	</div>
+</a>

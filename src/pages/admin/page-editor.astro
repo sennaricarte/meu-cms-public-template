@@ -1,0 +1,1861 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { SAFE_PAGES_REL_PATH } from './editor-server';
+import { loadStaticPageForEditor } from '../../lib/pages-editor-load';
+
+export const prerender = false;
+
+const fileParam = Astro.url.searchParams.get('file');
+let initialPage = null as Awaited<ReturnType<typeof loadStaticPageForEditor>> | null;
+let loadError: string | null = null;
+
+if (fileParam) {
+	if (!SAFE_PAGES_REL_PATH.test(fileParam)) {
+		loadError = 'Parâmetro «file» inválido.';
+	} else {
+		try {
+			initialPage = await loadStaticPageForEditor(fileParam);
+		} catch {
+			loadError = 'Não foi possível ler este ficheiro.';
+		}
+	}
+}
+
+const initialPayload = initialPage
+	? {
+			relativePath: initialPage.relativePath,
+			slugBase: initialPage.relativePath.replace(/\.(md|mdx)$/i, ''),
+			ext: initialPage.relativePath.toLowerCase().endsWith('.mdx') ? ('.mdx' as const) : ('.md' as const),
+			title: initialPage.title,
+			seoTitle: initialPage.seoTitle,
+			description: initialPage.description,
+			draft: initialPage.draft,
+			heroImage: initialPage.heroImage,
+			canonical: initialPage.canonical,
+			body: initialPage.body,
+		}
+	: null;
+
+const pageExtDefault =
+	initialPage?.relativePath?.toLowerCase().endsWith('.mdx') === true ? '.mdx' : '.md';
+---
+
+<DashboardLayout
+	title={initialPage ? 'Editar página' : 'Nova página'}
+	heading={initialPage ? 'Editar página estática' : 'Nova página estática'}
+>
+	<div class="space-y-6">
+		{
+			loadError && (
+				<div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+					{loadError}
+				</div>
+			)
+		}
+		<p class="text-sm text-neutral-600">
+			Gravação em <code class="text-xs bg-white px-1 rounded border border-neutral-200">src/content/pages/</code>. O slug define o caminho do ficheiro (ex.:
+			<code class="text-xs">contactos</code> → <code class="text-xs">contactos.md</code>,
+			<code class="text-xs">legal/privacidade</code> → <code class="text-xs">legal/privacidade.md</code>).
+		</p>
+
+		<form id="page-editor-form" class="space-y-8">
+			<input type="hidden" id="field-page-ext" value={pageExtDefault} />
+			<div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] gap-8 items-start">
+				<div class="min-w-0 space-y-6">
+					<div>
+						<label for="field-title" class="block font-medium text-neutral-800">Título da página</label>
+						<p class="text-xs text-neutral-500 mt-0.5 mb-1">Aparece como H1 na página pública.</p>
+						<input
+							id="field-title"
+							type="text"
+							name="title"
+							maxlength="60"
+							required
+							class="w-full border border-neutral-300 p-2 rounded bg-white"
+							autocomplete="off"
+						/>
+					</div>
+
+					<div class="flex items-center gap-2">
+						<input id="field-draft" type="checkbox" name="draft" class="rounded border-neutral-300" />
+						<label for="field-draft" class="font-medium text-neutral-800">Salvar como rascunho (draft)</label>
+					</div>
+
+					<!-- Upload de Imagem com Preview -->
+					<div class="border-2 border-dashed border-neutral-300 p-4 rounded text-center bg-white">
+						<label for="image-upload" class="block font-medium mb-2">Imagem de destaque (enviada como WebP)</label>
+						<input
+							id="image-upload"
+							type="file"
+							accept="image/jpeg,image/png,image/webp"
+							class="mb-4"
+							aria-describedby="upload-hint"
+						/>
+						<input type="hidden" name="heroImage" id="heroImage-url" value="" />
+						<p id="upload-hint" class="text-sm text-neutral-500 mb-2">Apenas JPEG, PNG ou WebP. Requer sessão admin.</p>
+						<div id="preview-container" class="hidden">
+							<img id="image-preview" src="" alt="Pré-visualização da imagem de destaque" class="max-h-48 mx-auto rounded" width="800" height="450" />
+						</div>
+					</div>
+
+					<div>
+						<label for="field-canonical" class="block font-medium text-neutral-800">URL canónica (opcional)</label>
+						<input
+							id="field-canonical"
+							type="url"
+							name="canonical"
+							class="w-full border border-neutral-300 p-2 rounded bg-white text-sm"
+							placeholder="https://..."
+							autocomplete="off"
+						/>
+					</div>
+
+			<!-- Área de Conteúdo — WYSIWYG nativo (document.execCommand) -->
+			<div class="space-y-2">
+				<span id="field-content-label" class="block font-medium">Conteúdo</span>
+				<div class="rounded-lg border border-neutral-300 overflow-hidden bg-white shadow-sm">
+					<div
+						id="wysiwyg-toolbar"
+						class="flex flex-wrap items-center gap-1 p-2 border-b border-neutral-200 bg-neutral-50"
+						role="toolbar"
+						aria-labelledby="field-content-label"
+					>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="formatBlock"
+							data-value="h1"
+							aria-label="Título nível 1"
+						>
+							H1
+						</button>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="formatBlock"
+							data-value="h2"
+							aria-label="Título nível 2"
+						>
+							H2
+						</button>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="formatBlock"
+							data-value="h3"
+							aria-label="Título nível 3"
+						>
+							H3
+						</button>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="formatBlock"
+							data-value="h4"
+							aria-label="Título nível 4"
+						>
+							H4
+						</button>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="formatBlock"
+							data-value="h5"
+							aria-label="Título nível 5"
+						>
+							H5
+						</button>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="formatBlock"
+							data-value="h6"
+							aria-label="Título nível 6"
+						>
+							H6
+						</button>
+						<span class="w-px h-6 bg-neutral-300 mx-0.5 self-center shrink-0" aria-hidden="true"></span>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="insertUnorderedList"
+							aria-label="Lista com marcadores"
+						>
+							Marcadores
+						</button>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="insertOrderedList"
+							aria-label="Lista numerada"
+						>
+							Numerada
+						</button>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="formatBlock"
+							data-value="blockquote"
+							aria-label="Citação"
+						>
+							Citação
+						</button>
+						<button
+							type="button"
+							id="toolbar-insert-table"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="insertTable"
+							aria-label="Inserir tabela 3 por 3 com bordas"
+						>
+							Tabela
+						</button>
+						<span class="w-px h-6 bg-neutral-300 mx-0.5 self-center shrink-0" aria-hidden="true"></span>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="bold"
+							aria-label="Negrito"
+						>
+							Negrito
+						</button>
+						<button
+							type="button"
+							id="toolbar-insert-link"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="createLink"
+							aria-label="Inserir link"
+						>
+							Link
+						</button>
+						<label class="inline-flex items-center gap-1.5 px-1 text-xs font-medium text-neutral-600">
+							<span aria-hidden="true">Cor</span>
+							<input
+								type="color"
+								id="wysiwyg-fg-color"
+								value="#0f172a"
+								class="h-9 w-11 cursor-pointer rounded border border-neutral-300 bg-white p-0"
+								aria-label="Cor do texto"
+								title="Cor do texto"
+							/>
+						</label>
+						<button
+							type="button"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							data-cmd="removeFormat"
+							aria-label="Limpar formatação"
+						>
+							Limpar formatação
+						</button>
+						<span class="w-px h-6 bg-neutral-300 mx-0.5 self-center shrink-0" aria-hidden="true"></span>
+						<button
+							type="button"
+							id="toolbar-insert-youtube"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							aria-label="Inserir vídeo do YouTube"
+						>
+							Vídeo
+						</button>
+						<button
+							type="button"
+							id="toolbar-open-media"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							aria-label="Inserir imagem das uploads"
+						>
+							Mídia
+						</button>
+						<span class="w-px h-6 bg-neutral-300 mx-0.5 self-center shrink-0" aria-hidden="true"></span>
+						<button
+							type="button"
+							id="toolbar-toggle-source"
+							class="wysiwyg-btn px-2.5 py-1.5 text-xs font-semibold rounded border border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100 focus:outline focus:outline-2 focus:outline-offset-0 focus:outline-blue-600"
+							aria-pressed="false"
+							aria-label="Alternar entre edição visual e código HTML bruto"
+						>
+							HTML
+						</button>
+					</div>
+					<div class="relative">
+						<div
+							id="wysiwyg-editor"
+							contenteditable="true"
+							lang="pt-br"
+							class="wysiwyg-editor min-h-[20rem] max-h-[min(70vh,36rem)] overflow-y-auto p-3 text-sm text-neutral-800 leading-relaxed focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+							role="textbox"
+							aria-multiline="true"
+							aria-labelledby="field-content-label"
+							spellcheck="false"
+						></div>
+						<label for="wysiwyg-source-view" class="sr-only">Código HTML do conteúdo</label>
+						<textarea
+							id="wysiwyg-source-view"
+							class="hidden wysiwyg-source-view min-h-[20rem] max-h-[min(70vh,36rem)] w-full overflow-y-auto p-3 text-xs font-mono text-neutral-800 leading-relaxed border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500 resize-y"
+							spellcheck="false"
+							wrap="off"
+							aria-hidden="true"
+						></textarea>
+					</div>
+					<div
+						id="wysiwyg-metrics-footer"
+						class="flex flex-wrap items-center justify-between gap-2 px-3 py-2 border-t border-neutral-200 bg-neutral-50 text-xs text-neutral-600"
+						aria-live="polite"
+					>
+						<span id="wysiwyg-seo-metrics" class="font-medium tabular-nums">Palavras: 0 | Caracteres: 0</span>
+						<span class="text-neutral-400 hidden sm:inline">Texto visível (sem tags HTML)</span>
+					</div>
+				</div>
+				<textarea id="field-content" name="content" required class="sr-only" tabindex="-1" aria-hidden="true"></textarea>
+				<p class="text-sm text-neutral-500">
+					Edição visual: o HTML é guardado no corpo do ficheiro em <code class="text-xs bg-neutral-50 px-1 rounded">src/content/pages/</code>.
+				</p>
+			</div>
+			<style>
+				.wysiwyg-editor h1 {
+					font-size: 1.75rem;
+					font-weight: 700;
+					margin: 0.75rem 0 0.5rem;
+				}
+				.wysiwyg-editor h2 {
+					font-size: 1.375rem;
+					font-weight: 700;
+					margin: 0.75rem 0 0.5rem;
+				}
+				.wysiwyg-editor h3 {
+					font-size: 1.125rem;
+					font-weight: 600;
+					margin: 0.5rem 0 0.35rem;
+				}
+				.wysiwyg-editor h4 {
+					font-size: 1.0625rem;
+					font-weight: 600;
+					margin: 0.45rem 0 0.3rem;
+				}
+				.wysiwyg-editor h5 {
+					font-size: 1rem;
+					font-weight: 600;
+					margin: 0.4rem 0 0.28rem;
+				}
+				.wysiwyg-editor h6 {
+					font-size: 0.9375rem;
+					font-weight: 600;
+					margin: 0.35rem 0 0.25rem;
+					color: #334155;
+				}
+				.wysiwyg-editor a {
+					color: #2563eb;
+					text-decoration: underline;
+				}
+				.wysiwyg-editor p {
+					margin: 0.35rem 0;
+				}
+				.wysiwyg-editor figure.wysiwyg-youtube-embed {
+					margin: 1rem 0;
+					max-width: 100%;
+				}
+				.wysiwyg-editor .wysiwyg-youtube-inner {
+					position: relative;
+					padding-bottom: 56.25%;
+					height: 0;
+					overflow: hidden;
+					max-width: 100%;
+					border-radius: 8px;
+					background: #0f172a;
+				}
+				.wysiwyg-editor .wysiwyg-youtube-inner iframe {
+					position: absolute;
+					top: 0;
+					left: 0;
+					width: 100%;
+					height: 100%;
+					border: 0;
+				}
+				.wysiwyg-editor img.wysiwyg-inserted-img {
+					max-width: 100%;
+					height: auto;
+					border-radius: 6px;
+					vertical-align: middle;
+				}
+				#wysiwyg-toolbar.wysiwyg-toolbar--source .wysiwyg-btn:not(#toolbar-toggle-source),
+				#wysiwyg-toolbar.wysiwyg-toolbar--source label {
+					pointer-events: none;
+					opacity: 0.45;
+				}
+				#wysiwyg-toolbar .wysiwyg-btn.wysiwyg-btn-active {
+					background: #dbeafe;
+					border-color: #2563eb;
+					color: #1e40af;
+					box-shadow: 0 0 0 1px #2563eb;
+				}
+				.wysiwyg-editor blockquote {
+					margin: 0.75rem 0;
+					padding: 0.5rem 0 0.5rem 1rem;
+					border-left: 4px solid #cbd5e1;
+					color: #475569;
+					font-style: italic;
+				}
+				.wysiwyg-editor ul,
+				.wysiwyg-editor ol {
+					margin: 0.35rem 0;
+					padding-left: 1.5rem;
+				}
+				.wysiwyg-editor li {
+					margin: 0.15rem 0;
+				}
+			</style>
+			<!-- Referência Tailwind para tabela 3×3 inserida por buildTable3x3Markup() -->
+			<div class="hidden" aria-hidden="true">
+				<table class="border-collapse border-2 border-slate-400 w-full text-sm my-2">
+					<tbody>
+						<tr>
+							<td class="border border-slate-300 p-2 min-w-[4rem] align-top"></td>
+							<td class="border border-slate-300 p-2 min-w-[4rem] align-top"></td>
+							<td class="border border-slate-300 p-2 min-w-[4rem] align-top"></td>
+						</tr>
+						<tr>
+							<td class="border border-slate-300 p-2 align-top"></td>
+							<td class="border border-slate-300 p-2 align-top"></td>
+							<td class="border border-slate-300 p-2 align-top"></td>
+						</tr>
+						<tr>
+							<td class="border border-slate-300 p-2 align-top"></td>
+							<td class="border border-slate-300 p-2 align-top"></td>
+							<td class="border border-slate-300 p-2 align-top"></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
+					<button
+						type="submit"
+						class="w-full sm:w-auto bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600 font-medium"
+					>
+						Guardar página
+					</button>
+				</div>
+
+				<aside
+					class="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-5 xl:sticky xl:top-6 self-start shadow-sm"
+					aria-labelledby="seo-aside-heading"
+				>
+					<h2 id="seo-aside-heading" class="text-sm font-semibold text-neutral-900 border-b border-neutral-200 pb-2">
+						Configurações de SEO
+					</h2>
+					<p class="text-xs text-neutral-600 leading-relaxed">
+						O <strong class="font-semibold text-neutral-800">score SEO</strong> analisa o conteúdo usando como palavra-chave de referência o teu
+						<strong class="font-semibold text-neutral-800">título SEO</strong> (se preenchido) ou o <strong class="font-semibold text-neutral-800">título da página</strong>.
+					</p>
+
+					<div>
+						<label for="field-seo-title" class="block text-sm font-medium text-neutral-800">Título SEO (opcional)</label>
+						<p class="text-xs text-neutral-500 mt-0.5 mb-1">
+							Sobrescreve o título do separador e das pré-visualizações sociais. Se vazio, usa o título da página.
+						</p>
+						<input
+							id="field-seo-title"
+							type="text"
+							name="seoTitle"
+							maxlength="60"
+							class="w-full border border-neutral-300 p-2 rounded text-sm bg-white"
+							placeholder="Máx. 60 caracteres"
+							autocomplete="off"
+							aria-describedby="seo-title-count"
+						/>
+						<p id="seo-title-count" class="text-xs text-neutral-500 mt-1 tabular-nums" aria-live="polite">0 / 60</p>
+					</div>
+
+					<div>
+						<label for="field-description" class="block text-sm font-medium text-neutral-800">Meta description</label>
+						<textarea
+							id="field-description"
+							name="description"
+							rows="4"
+							minlength="50"
+							maxlength="160"
+							required
+							class="w-full border border-neutral-300 p-2 rounded text-sm bg-white"
+							aria-describedby="meta-desc-count"
+						></textarea>
+						<p id="meta-desc-count" class="text-xs text-neutral-500 mt-1 tabular-nums" aria-live="polite">0 / 160</p>
+						<p class="text-xs text-neutral-500 mt-1">Recomendado: 50–160 caracteres (regra da collection).</p>
+					</div>
+
+					<div>
+						<label for="field-slug" class="block text-sm font-medium text-neutral-800">Slug (URL)</label>
+						<input
+							id="field-slug"
+							type="text"
+							name="slug"
+							required
+							class="w-full border border-neutral-300 p-2 rounded text-sm bg-white"
+							placeholder="ex: meu-novo-post"
+							spellcheck="false"
+							autocomplete="off"
+							aria-describedby="slug-hint"
+						/>
+						<p id="slug-hint" class="text-xs text-neutral-500 mt-1">
+							Caminho do ficheiro em <code class="text-xs bg-white px-1 rounded border border-neutral-200">src/content/pages/</code> (sem extensão).
+							Podes usar subpastas: <code class="text-xs">legal/privacidade</code>. Extensão:
+							<code class="text-xs" id="slug-ext-hint">{pageExtDefault}</code>. Sugestão automática a partir do título até editares o slug.
+						</p>
+					</div>
+
+					<section
+						id="seo-intelligence-panel"
+						class="rounded-lg border border-indigo-200 bg-gradient-to-b from-white to-indigo-50/40 p-3 space-y-3"
+						aria-labelledby="seo-score-heading"
+					>
+						<h3 id="seo-score-heading" class="text-xs font-semibold uppercase tracking-wide text-indigo-900">
+							Inteligência analítica
+						</h3>
+						<div class="flex items-center gap-3">
+							<div
+								class="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-neutral-200 bg-white shadow-inner"
+								aria-hidden="true"
+							>
+								<span id="seo-score-dial" class="text-lg font-bold tabular-nums text-neutral-800">0</span>
+							</div>
+							<div class="flex-1 min-w-0 space-y-1.5">
+								<div class="flex items-baseline justify-between gap-2">
+									<span class="text-xs font-medium text-neutral-600">Score SEO</span>
+									<span id="seo-score-label" class="text-xs font-semibold text-neutral-500">—</span>
+								</div>
+								<div class="h-2.5 w-full overflow-hidden rounded-full bg-neutral-200">
+									<div
+										id="seo-score-bar"
+										class="h-full w-0 rounded-full bg-red-500 transition-[width] duration-300 ease-out"
+									></div>
+								</div>
+								<p id="seo-score-value-inline" class="text-[11px] text-neutral-500 tabular-nums">
+									0 / 100
+								</p>
+							</div>
+						</div>
+						<div>
+							<p class="text-[11px] font-medium text-neutral-700 mb-1.5">O que falta fazer</p>
+							<ul
+								id="seo-score-checklist"
+								class="list-disc space-y-1 pl-4 text-xs text-neutral-700 leading-snug"
+								role="list"
+								aria-live="polite"
+							></ul>
+						</div>
+					</section>
+				</aside>
+			</div>
+
+			<!-- Modal: biblioteca public/uploads -->
+			<div
+				id="media-modal"
+				class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="media-modal-title"
+				aria-hidden="true"
+			>
+				<div
+					class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col border border-neutral-200"
+					role="document"
+				>
+					<div class="flex items-center justify-between gap-4 p-4 border-b border-neutral-200">
+						<h2 id="media-modal-title" class="text-lg font-semibold text-neutral-900">Imagens em /uploads</h2>
+						<button
+							type="button"
+							id="media-modal-close"
+							class="text-sm font-medium text-neutral-600 hover:text-neutral-900 px-2 py-1 rounded focus:outline focus:outline-2 focus:outline-blue-600"
+							aria-label="Fechar"
+						>
+							Fechar
+						</button>
+					</div>
+					<div id="media-modal-body" class="p-4 overflow-y-auto flex-1">
+						<p id="media-modal-loading" class="text-sm text-neutral-500">A carregar…</p>
+						<p id="media-modal-empty" class="hidden text-sm text-neutral-500">Nenhuma imagem encontrada em <code class="text-xs bg-neutral-100 px-1 rounded">public/uploads/</code>.</p>
+						<div id="media-modal-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Modal: inserir/editar link -->
+			<div
+				id="link-modal"
+				class="hidden fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="link-modal-title"
+				aria-hidden="true"
+			>
+				<div
+					class="bg-white rounded-xl shadow-xl max-w-md w-full border border-neutral-200"
+					role="document"
+				>
+					<div class="p-4 border-b border-neutral-200">
+						<h2 id="link-modal-title" class="text-lg font-semibold text-neutral-900">Link</h2>
+						<p class="text-sm text-neutral-500 mt-1">URL, nofollow e nova aba — opcionais conforme o caso.</p>
+					</div>
+					<form id="link-modal-form" class="p-4 space-y-4">
+						<div>
+							<label for="link-modal-href" class="block text-sm font-medium text-neutral-700 mb-1">URL</label>
+							<input
+								type="text"
+								id="link-modal-href"
+								name="href"
+								required
+								placeholder="https://… ou /pagina"
+								class="w-full border border-neutral-300 rounded-lg px-3 py-2 text-sm focus:outline focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+								autocomplete="off"
+							/>
+						</div>
+						<div class="space-y-2">
+							<label class="flex items-center gap-2.5 cursor-pointer rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+								<input
+									type="checkbox"
+									id="link-modal-nofollow"
+									name="nofollow"
+									class="rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+								/>
+								<span class="text-sm text-neutral-800">
+									Nofollow (<code class="text-xs bg-white px-1 rounded border border-neutral-200">rel=&quot;nofollow&quot;</code>) — patrocinados, afiliados, etc.
+								</span>
+							</label>
+							<label class="flex items-center gap-2.5 cursor-pointer rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5">
+								<input
+									type="checkbox"
+									id="link-modal-newtab"
+									name="newtab"
+									class="rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
+								/>
+								<span class="text-sm text-neutral-800">
+									Abrir em nova aba (<code class="text-xs bg-white px-1 rounded border border-neutral-200">target=&quot;_blank&quot;</code>)
+								</span>
+							</label>
+						</div>
+						<div class="flex justify-end gap-2 pt-2">
+							<button
+								type="button"
+								id="link-modal-cancel"
+								class="px-4 py-2 text-sm font-medium text-neutral-700 border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline focus:outline-2 focus:outline-blue-600"
+							>
+								Cancelar
+							</button>
+							<button
+								type="submit"
+								class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
+							>
+								Aplicar link
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+
+		</form>
+	</div>
+
+	<script define:vars={{ initialPayload }}>
+		import { actions } from 'astro:actions';
+
+		const SAFE_PAGES_REL_PATH_JS =
+			/^(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_-]+\.(?:md|mdx)$/;
+
+		const fileInput = document.querySelector('#image-upload');
+		const previewContainer = document.querySelector('#preview-container');
+		const imagePreview = document.querySelector('#image-preview');
+		const heroHidden = document.querySelector('#heroImage-url');
+
+		let currentRelativePath = initialPayload?.relativePath ?? null;
+		let slugManuallyEdited = !!initialPayload;
+
+		function slugifyTitle(raw: string): string {
+			return raw
+				.normalize('NFD')
+				.replace(/\p{M}/gu, '')
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/^-+|-+$/g, '')
+				.slice(0, 80);
+		}
+
+		function updateSeoFieldCounts() {
+			const seo = document.querySelector('#field-seo-title');
+			const desc = document.querySelector('#field-description');
+			const seoC = document.querySelector('#seo-title-count');
+			const descC = document.querySelector('#meta-desc-count');
+			if (seo instanceof HTMLInputElement && seoC) {
+				seoC.textContent = `${seo.value.length} / 60`;
+			}
+			if (desc instanceof HTMLTextAreaElement && descC) {
+				const n = desc.value.length;
+				descC.textContent = `${n} / 160`;
+				descC.classList.toggle('text-amber-700', n > 0 && n < 50);
+				descC.classList.toggle('text-neutral-400', n === 0);
+				descC.classList.toggle('text-neutral-500', n >= 50);
+			}
+			updateSeoIntelligence();
+		}
+
+		function normText(s: string): string {
+			return s
+				.toLowerCase()
+				.normalize('NFD')
+				.replace(/\p{M}/gu, '')
+				.replace(/\s+/g, ' ')
+				.trim();
+		}
+
+		function textIncludesKeyword(haystack: string, keyword: string): boolean {
+			const k = normText(keyword);
+			const h = normText(haystack);
+			if (!k.length) return false;
+			return h.includes(k);
+		}
+
+		function getFirstParagraphText(html: string): string {
+			const tpl = document.createElement('template');
+			tpl.innerHTML = html.trim();
+			const p = tpl.content.querySelector('p');
+			if (p) return (p.textContent ?? '').trim();
+			const first = tpl.content.firstElementChild;
+			return (first?.textContent ?? '').trim();
+		}
+
+		function bodyHasKeywordInH2OrH3(html: string, keyword: string): boolean {
+			const tpl = document.createElement('template');
+			tpl.innerHTML = html.trim();
+			for (const el of tpl.content.querySelectorAll('h2, h3')) {
+				if (textIncludesKeyword(el.textContent ?? '', keyword)) return true;
+			}
+			return false;
+		}
+
+		function allImagesHaveNonEmptyAlt(html: string): boolean {
+			const tpl = document.createElement('template');
+			tpl.innerHTML = html.trim();
+			const imgs = tpl.content.querySelectorAll('img');
+			if (imgs.length === 0) return true;
+			for (const img of imgs) {
+				const alt = img.getAttribute('alt');
+				if (alt === null || !alt.trim()) return false;
+			}
+			return true;
+		}
+
+		function slugMatchesKeyword(slugRaw: string, keyword: string): boolean {
+			const cleaned = slugRaw.replace(/\.(md|mdx)$/i, '');
+			const slugFlat = normText(cleaned.replace(/[-/]/g, ' '));
+			const words = normText(keyword)
+				.split(/\s+/)
+				.map((w) => w.trim())
+				.filter(Boolean);
+			if (!words.length) return false;
+			return words.every((w) => slugFlat.includes(w));
+		}
+
+		/** Score para páginas estáticas: termo principal = título SEO ou título da página (sem campo «foco»). */
+		function computeStaticPageSeoScore(input: {
+			pageTitle: string;
+			seoTitle: string;
+			metaDescription: string;
+			slug: string;
+			bodyHtml: string;
+		}): { score: number; missing: string[] } {
+			const missing: string[] = [];
+			let score = 0;
+			const seoTrim = input.seoTitle.trim();
+			const titleTrim = input.pageTitle.trim();
+			const kw = seoTrim || titleTrim;
+			const titleTagForSerp = seoTrim || titleTrim;
+
+			const plain = stripHtmlToPlain(input.bodyHtml);
+			const wordCount = plain.trim() ? plain.trim().split(/\s+/).filter(Boolean).length : 0;
+
+			if (!kw.length) {
+				missing.push('Preencha o título da página ou o título SEO para calcular o score completo.');
+				if (wordCount <= 600) missing.push('Amplie o conteúdo para mais de 600 palavras.');
+				if (!allImagesHaveNonEmptyAlt(input.bodyHtml)) {
+					missing.push('Defina o atributo alt em todas as imagens do corpo.');
+				}
+				const descLen = input.metaDescription.trim().length;
+				if (descLen < 50) missing.push('Complete a meta description (mín. 50 caracteres).');
+				return { score: 0, missing };
+			}
+
+			if (titleTagForSerp.length >= 25 && titleTagForSerp.length <= 65) {
+				score += 20;
+			} else {
+				missing.push('Ajuste o título SEO ou o título da página para ~25–65 caracteres (bom comprimento em SERP).');
+			}
+
+			const firstP = getFirstParagraphText(input.bodyHtml);
+			if (firstP.length && textIncludesKeyword(firstP, kw)) {
+				score += 10;
+			} else {
+				missing.push('Inclua o termo principal (do título) no primeiro parágrafo.');
+			}
+
+			if (bodyHasKeywordInH2OrH3(input.bodyHtml, kw)) {
+				score += 10;
+			} else {
+				missing.push('Inclua o termo principal num título H2 ou H3.');
+			}
+
+			if (wordCount > 600) {
+				score += 10;
+			} else {
+				missing.push('Escreva mais de 600 palavras no corpo da página.');
+			}
+
+			const desc = input.metaDescription.trim();
+			if (desc.length >= 50 && textIncludesKeyword(desc, kw)) {
+				score += 10;
+			} else {
+				if (desc.length < 50) {
+					missing.push('Meta description com pelo menos 50 caracteres e com o termo principal.');
+				} else {
+					missing.push('Inclua o termo principal na meta description.');
+				}
+			}
+
+			if (allImagesHaveNonEmptyAlt(input.bodyHtml)) {
+				score += 20;
+			} else {
+				missing.push('Todas as imagens no corpo devem ter alt descritivo.');
+			}
+
+			if (slugMatchesKeyword(input.slug, kw)) {
+				score += 20;
+			} else {
+				missing.push('Alinhe o slug (URL) com o termo principal (palavras-chave no caminho).');
+			}
+
+			return { score: Math.min(100, score), missing };
+		}
+
+		function updateSeoIntelligence() {
+			const titleEl = document.querySelector('#field-title');
+			const seoEl = document.querySelector('#field-seo-title');
+			const descEl = document.querySelector('#field-description');
+			const slugEl = document.querySelector('#field-slug');
+			const src = document.querySelector('#wysiwyg-source-view');
+			const ed = document.querySelector('#wysiwyg-editor');
+			let bodyHtml = '';
+			if (src instanceof HTMLTextAreaElement && !src.classList.contains('hidden')) {
+				bodyHtml = src.value;
+			} else if (ed instanceof HTMLElement) {
+				bodyHtml = ed.innerHTML;
+			}
+
+			const { score, missing } = computeStaticPageSeoScore({
+				pageTitle: titleEl instanceof HTMLInputElement ? titleEl.value : '',
+				seoTitle: seoEl instanceof HTMLInputElement ? seoEl.value : '',
+				metaDescription: descEl instanceof HTMLTextAreaElement ? descEl.value : '',
+				slug: slugEl instanceof HTMLInputElement ? slugEl.value : '',
+				bodyHtml,
+			});
+
+			const dial = document.querySelector('#seo-score-dial');
+			const bar = document.querySelector('#seo-score-bar');
+			const labelEl = document.querySelector('#seo-score-label');
+			const inline = document.querySelector('#seo-score-value-inline');
+			const list = document.querySelector('#seo-score-checklist');
+
+			if (dial) dial.textContent = String(score);
+
+			if (bar instanceof HTMLElement) {
+				bar.style.width = `${score}%`;
+				bar.className =
+					'h-full rounded-full transition-[width] duration-300 ease-out ' +
+					(score < 50 ? 'bg-red-500' : score < 80 ? 'bg-amber-400' : 'bg-emerald-600');
+			}
+
+			if (labelEl) {
+				labelEl.textContent =
+					score < 50 ? 'Fraco' : score < 80 ? 'Razoável' : score < 100 ? 'Bom' : 'Excelente';
+				labelEl.className =
+					'text-xs font-semibold ' +
+					(score < 50 ? 'text-red-600' : score < 80 ? 'text-amber-700' : 'text-emerald-700');
+			}
+
+			if (inline) inline.textContent = `${score} / 100`;
+
+			if (list instanceof HTMLUListElement) {
+				list.replaceChildren();
+				if (missing.length === 0) {
+					const li = document.createElement('li');
+					li.className = 'list-none -ml-4 text-emerald-800 font-medium';
+					li.textContent = '✓ Todos os critérios analisados estão cumpridos.';
+					list.appendChild(li);
+				} else {
+					for (const msg of missing) {
+						const li = document.createElement('li');
+						li.textContent = msg;
+						list.appendChild(li);
+					}
+				}
+			}
+		}
+
+		/** Markdown/texto simples → HTML mínimo para o contenteditable; HTML existente mantém-se. */
+		function bodyToHtml(body: string): string {
+			const t = body.replace(/^\uFEFF/, '').trimEnd();
+			if (!t) return '<p><br></p>';
+			if (/^\s*</.test(t)) return t;
+			return t
+				.split(/\n\n+/)
+				.map((block) => `<p>${block.split(/\n/).join('<br>')}</p>`)
+				.join('');
+		}
+
+		function getWysiwygEls() {
+			const ed = document.querySelector('#wysiwyg-editor');
+			const ta = document.querySelector('#field-content');
+			return {
+				editor: ed instanceof HTMLElement ? ed : null,
+				textarea: ta instanceof HTMLTextAreaElement ? ta : null,
+			};
+		}
+
+		function syncWysiwygToTextarea() {
+			const { editor, textarea } = getWysiwygEls();
+			if (!(textarea instanceof HTMLTextAreaElement)) return;
+			const sourceView = document.querySelector('#wysiwyg-source-view');
+			if (sourceView instanceof HTMLTextAreaElement && !sourceView.classList.contains('hidden')) {
+				textarea.value = sourceView.value;
+			} else if (editor) {
+				textarea.value = editor.innerHTML;
+			}
+		}
+
+		function stripHtmlToPlain(html: string): string {
+			const d = document.createElement('div');
+			d.innerHTML = html;
+			return (d.innerText ?? '').trim();
+		}
+
+		/** Tabela 3×3 com bordas visíveis (Tailwind); espelhada no bloco oculto do template para o JIT. */
+		function buildTable3x3Markup(): string {
+			let rows = '';
+			for (let r = 0; r < 3; r++) {
+				rows += '<tr>';
+				for (let c = 0; c < 3; c++) {
+					rows +=
+						'<td class="border border-slate-300 p-2 min-w-[4rem] align-top">&nbsp;</td>';
+				}
+				rows += '</tr>';
+			}
+			return `<table class="border-collapse border-2 border-slate-400 w-full text-sm my-2"><tbody>${rows}</tbody></table>`;
+		}
+
+		function updateWysiwygMetrics() {
+			const src = document.querySelector('#wysiwyg-source-view');
+			const ed = document.querySelector('#wysiwyg-editor');
+			let html = '';
+			if (src instanceof HTMLTextAreaElement && !src.classList.contains('hidden')) {
+				html = src.value;
+			} else if (ed instanceof HTMLElement) {
+				html = ed.innerHTML;
+			}
+			const plain = stripHtmlToPlain(html);
+			const words = plain.trim() ? plain.trim().split(/\s+/).filter(Boolean).length : 0;
+			const charCount = plain.length;
+			const metricsEl = document.querySelector('#wysiwyg-seo-metrics');
+			if (metricsEl) {
+				metricsEl.textContent = `Palavras: ${words.toLocaleString('pt-BR')} | Caracteres: ${charCount.toLocaleString('pt-BR')}`;
+			}
+			updateSeoIntelligence();
+		}
+
+		function selectionAnchorInEditor(editor: HTMLElement): boolean {
+			const sel = window.getSelection();
+			if (!sel?.anchorNode) return false;
+			return editor.contains(sel.anchorNode);
+		}
+
+		function clearToolbarFormatHighlight(toolbar: HTMLElement) {
+			toolbar.querySelectorAll('.wysiwyg-btn-active').forEach((el) => el.classList.remove('wysiwyg-btn-active'));
+		}
+
+		function updateToolbarActiveStates() {
+			const editor = document.querySelector('#wysiwyg-editor');
+			const toolbar = document.querySelector('#wysiwyg-toolbar');
+			const sourceView = document.querySelector('#wysiwyg-source-view');
+			if (!(editor instanceof HTMLElement) || !(toolbar instanceof HTMLElement)) return;
+
+			if (sourceView instanceof HTMLTextAreaElement && !sourceView.classList.contains('hidden')) {
+				clearToolbarFormatHighlight(toolbar);
+				return;
+			}
+			if (!selectionAnchorInEditor(editor)) {
+				clearToolbarFormatHighlight(toolbar);
+				return;
+			}
+
+			let format = '';
+			try {
+				format = String(document.queryCommandValue('formatBlock') ?? '')
+					.replace(/[<>]/g, '')
+					.trim()
+					.toLowerCase();
+			} catch {
+				format = '';
+			}
+
+			toolbar.querySelectorAll('button[data-cmd="formatBlock"][data-value]').forEach((btn) => {
+				if (!(btn instanceof HTMLButtonElement)) return;
+				const val = btn.getAttribute('data-value')?.toLowerCase() ?? '';
+				btn.classList.toggle('wysiwyg-btn-active', val === format);
+			});
+
+			try {
+				const ulBtn = toolbar.querySelector('button[data-cmd="insertUnorderedList"]');
+				const olBtn = toolbar.querySelector('button[data-cmd="insertOrderedList"]');
+				const boldBtn = toolbar.querySelector('button[data-cmd="bold"]');
+				if (ulBtn) ulBtn.classList.toggle('wysiwyg-btn-active', document.queryCommandState('insertUnorderedList'));
+				if (olBtn) olBtn.classList.toggle('wysiwyg-btn-active', document.queryCommandState('insertOrderedList'));
+				if (boldBtn) boldBtn.classList.toggle('wysiwyg-btn-active', document.queryCommandState('bold'));
+			} catch {
+				/* Safari / contexto sem comando */
+			}
+		}
+
+		let toolbarSelectionRaf = 0;
+
+		function sanitizePastedSubtree(node: Node, ownerDoc: Document): void {
+			if (node.nodeType === Node.COMMENT_NODE) {
+				node.parentNode?.removeChild(node);
+				return;
+			}
+			if (node.nodeType === Node.TEXT_NODE) return;
+			if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+			const el = node as HTMLElement;
+			const tag = el.tagName;
+
+			if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'LINK' || tag === 'META' || tag === 'TITLE') {
+				el.remove();
+				return;
+			}
+
+			el.removeAttribute('style');
+			el.removeAttribute('class');
+			el.removeAttribute('id');
+			el.removeAttribute('lang');
+			el.removeAttribute('dir');
+			el.removeAttribute('face');
+			el.removeAttribute('size');
+			el.removeAttribute('color');
+			el.removeAttribute('width');
+			el.removeAttribute('height');
+			el.removeAttribute('align');
+			el.removeAttribute('valign');
+			el.removeAttribute('bgcolor');
+			el.removeAttribute('cellpadding');
+			el.removeAttribute('cellspacing');
+			el.removeAttribute('border');
+
+			if (el.tagName === 'A') {
+				const href = el.getAttribute('href');
+				if (href && /^javascript:/i.test(href.trim())) {
+					el.removeAttribute('href');
+				}
+			}
+
+			if (tag === 'FONT') {
+				const span = ownerDoc.createElement('span');
+				while (el.firstChild) span.appendChild(el.firstChild);
+				el.parentNode?.replaceChild(span, el);
+				Array.from(span.childNodes).forEach((ch) => sanitizePastedSubtree(ch, ownerDoc));
+				return;
+			}
+
+			Array.from(el.childNodes).forEach((ch) => sanitizePastedSubtree(ch, ownerDoc));
+		}
+
+		/**
+		 * Quebras duplas em nós de texto → vários <p> (respeita células de tabela).
+		 * Quebras simples dentro do parágrafo viram <br>.
+		 */
+		function convertDoubleNewlinesInTextNodes(root: HTMLElement): void {
+			const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+				acceptNode(text: Node) {
+					let p = text.parentElement;
+					while (p) {
+						if (p.tagName === 'SCRIPT' || p.tagName === 'STYLE') {
+							return NodeFilter.FILTER_REJECT;
+						}
+						p = p.parentElement;
+					}
+					if (!/\n\n/.test(text.textContent ?? '')) return NodeFilter.FILTER_REJECT;
+					return NodeFilter.FILTER_ACCEPT;
+				},
+			});
+
+			const toSplit: Text[] = [];
+			let w: Node | null;
+			while ((w = walker.nextNode())) {
+				toSplit.push(w as Text);
+			}
+
+			for (const textNode of toSplit) {
+				const raw = textNode.data;
+				if (!/\n\n/.test(raw)) continue;
+				const parent = textNode.parentNode;
+				if (!parent) continue;
+				const doc = textNode.ownerDocument;
+				const blocks = raw.split(/\n\n+/);
+				const fragment = doc.createDocumentFragment();
+				for (const block of blocks) {
+					const p = doc.createElement('p');
+					const lines = block.split('\n');
+					lines.forEach((line, i) => {
+						if (i > 0) p.appendChild(doc.createElement('br'));
+						if (line.length) p.appendChild(doc.createTextNode(line));
+					});
+					if (!p.childNodes.length) p.appendChild(doc.createElement('br'));
+					fragment.appendChild(p);
+				}
+				parent.replaceChild(fragment, textNode);
+			}
+		}
+
+		function skipEmptyTextNodes(node: ChildNode | null): ChildNode | null {
+			let n = node;
+			while (
+				n &&
+				n.nodeType === Node.TEXT_NODE &&
+				!(n as Text).data.replace(/\u00a0/g, ' ').trim()
+			) {
+				n = n.nextSibling;
+			}
+			return n;
+		}
+
+		/** Colapsa pares &lt;br&gt;&lt;br&gt; (ex.: Word/Docs) num novo &lt;p&gt;; estrutura de tabela mantém-se. */
+		function convertDoubleBrToParagraphs(root: HTMLElement): void {
+			const doc = root.ownerDocument;
+			let progress = true;
+			while (progress) {
+				progress = false;
+				const brs = Array.from(root.getElementsByTagName('br'));
+				for (const br1 of brs) {
+					const afterFirst = skipEmptyTextNodes(br1.nextSibling);
+					if (!afterFirst || afterFirst.nodeName !== 'BR') continue;
+
+					const br2 = afterFirst as HTMLBRElement;
+					const parent = br1.parentNode;
+					if (!parent) continue;
+
+					progress = true;
+					const newP = doc.createElement('p');
+					let cur: ChildNode | null = br2.nextSibling;
+					br1.remove();
+					br2.remove();
+					parent.insertBefore(newP, cur);
+
+					while (cur) {
+						const next = cur.nextSibling;
+						if (cur.nodeName === 'BR') {
+							const afterBr = skipEmptyTextNodes(cur.nextSibling);
+							if (afterBr?.nodeName === 'BR') break;
+						}
+						newP.appendChild(cur);
+						cur = next;
+					}
+					break;
+				}
+			}
+		}
+
+		function buildPasteFragmentFromHtml(html: string): DocumentFragment {
+			const parsed = new DOMParser().parseFromString(html, 'text/html');
+			sanitizePastedSubtree(parsed.body, parsed);
+			convertDoubleNewlinesInTextNodes(parsed.body);
+			convertDoubleBrToParagraphs(parsed.body);
+
+			const frag = document.createDocumentFragment();
+			while (parsed.body.firstChild) {
+				frag.appendChild(parsed.body.firstChild);
+			}
+			return frag;
+		}
+
+		function insertFragmentAtSelection(editor: HTMLElement, fragment: DocumentFragment) {
+			const sel = window.getSelection();
+			if (!sel || sel.rangeCount === 0) return;
+			const range = sel.getRangeAt(0);
+			if (!editor.contains(range.commonAncestorContainer) && editor !== range.commonAncestorContainer) {
+				range.selectNodeContents(editor);
+				range.collapse(false);
+			}
+			range.deleteContents();
+			const last = fragment.lastChild;
+			range.insertNode(fragment);
+			if (last) {
+				range.setStartAfter(last);
+				range.collapse(true);
+				sel.removeAllRanges();
+				sel.addRange(range);
+			}
+			syncWysiwygToTextarea();
+			updateWysiwygMetrics();
+		}
+
+		function parseYouTubeId(raw: string): string | null {
+			const t = raw.trim();
+			if (!t) return null;
+			let m = /youtu\.be\/([a-zA-Z0-9_-]{11})\b/.exec(t);
+			if (m) return m[1];
+			m = /[?&]v=([a-zA-Z0-9_-]{11})\b/.exec(t);
+			if (m) return m[1];
+			m = /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})\b/.exec(t);
+			if (m) return m[1];
+			m = /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})\b/.exec(t);
+			if (m) return m[1];
+			return null;
+		}
+
+		function rangeInsideEditor(editor: HTMLElement, range: Range): boolean {
+			const root = range.commonAncestorContainer;
+			return editor === root || editor.contains(root);
+		}
+
+		function escapeHtmlAttr(s: string): string {
+			return s
+				.replace(/&/g, '&amp;')
+				.replace(/"/g, '&quot;')
+				.replace(/</g, '&lt;');
+		}
+
+		function findAnchorAtSelection(editor: HTMLElement): HTMLAnchorElement | null {
+			const sel = window.getSelection();
+			if (!sel?.anchorNode) return null;
+			let n: Node | null = sel.anchorNode;
+			if (n.nodeType === Node.TEXT_NODE) n = n.parentNode;
+			let el: Element | null = n instanceof Element ? n : null;
+			while (el && el !== editor) {
+				if (el.tagName === 'A') return el as HTMLAnchorElement;
+				el = el.parentElement;
+			}
+			return null;
+		}
+
+		function applyLinkOptions(anchor: HTMLAnchorElement, nofollow: boolean, newTab: boolean) {
+			const parts: string[] = [];
+			if (nofollow) parts.push('nofollow');
+			if (newTab) {
+				anchor.target = '_blank';
+				parts.push('noopener', 'noreferrer');
+			} else {
+				anchor.removeAttribute('target');
+			}
+			const rel = [...new Set(parts)].join(' ');
+			if (rel) anchor.setAttribute('rel', rel);
+			else anchor.removeAttribute('rel');
+		}
+
+		function insertHtmlAtCaret(editor: HTMLElement, html: string, saved: Range | null) {
+			editor.focus();
+			let range: Range;
+			if (saved && rangeInsideEditor(editor, saved)) {
+				range = saved.cloneRange();
+			} else {
+				range = document.createRange();
+				range.selectNodeContents(editor);
+				range.collapse(false);
+			}
+			const tpl = document.createElement('template');
+			tpl.innerHTML = html.trim();
+			const frag = tpl.content;
+			const last = frag.lastChild;
+			range.deleteContents();
+			range.insertNode(frag);
+			if (last?.isConnected) {
+				range.setStartAfter(last);
+				range.collapse(true);
+				const sel = window.getSelection();
+				sel?.removeAllRanges();
+				sel?.addRange(range);
+			}
+			syncWysiwygToTextarea();
+			updateWysiwygMetrics();
+		}
+
+		function initWysiwygToolbar() {
+			const { editor, textarea } = getWysiwygEls();
+			const toolbar = document.querySelector('#wysiwyg-toolbar');
+			const colorInput = document.querySelector('#wysiwyg-fg-color');
+			if (!editor || !textarea || !toolbar) return;
+
+			let lastCaretRange: Range | null = null;
+
+			function rememberCaret() {
+				const sel = window.getSelection();
+				if (!sel?.rangeCount) return;
+				if (!editor.contains(sel.anchorNode) && editor !== sel.anchorNode) return;
+				lastCaretRange = sel.getRangeAt(0).cloneRange();
+			}
+
+			editor.addEventListener('mouseup', rememberCaret);
+			editor.addEventListener('keyup', rememberCaret);
+			editor.addEventListener('input', () => {
+				syncWysiwygToTextarea();
+				updateWysiwygMetrics();
+			});
+
+			const btnYoutube = document.querySelector('#toolbar-insert-youtube');
+			const btnMedia = document.querySelector('#toolbar-open-media');
+			const mediaModal = document.querySelector('#media-modal');
+			const mediaModalClose = document.querySelector('#media-modal-close');
+			const mediaGrid = document.querySelector('#media-modal-grid');
+			const mediaLoading = document.querySelector('#media-modal-loading');
+			const mediaEmpty = document.querySelector('#media-modal-empty');
+
+			function openMediaModal() {
+				if (!(mediaModal instanceof HTMLElement)) return;
+				mediaModal.classList.remove('hidden');
+				mediaModal.setAttribute('aria-hidden', 'false');
+				mediaModalClose?.focus();
+				void loadMediaGrid();
+			}
+
+			function closeMediaModal() {
+				if (!(mediaModal instanceof HTMLElement)) return;
+				mediaModal.classList.add('hidden');
+				mediaModal.setAttribute('aria-hidden', 'true');
+				editor.focus();
+			}
+
+			async function loadMediaGrid() {
+				if (
+					!(mediaGrid instanceof HTMLElement) ||
+					!(mediaLoading instanceof HTMLElement) ||
+					!(mediaEmpty instanceof HTMLElement)
+				) {
+					return;
+				}
+				mediaGrid.classList.add('hidden');
+				mediaEmpty.classList.add('hidden');
+				mediaLoading.classList.remove('hidden');
+				mediaGrid.replaceChildren();
+
+				try {
+					const res = await fetch('/api/list-uploads', { credentials: 'same-origin' });
+					const data = (await res.json()) as { images?: { url: string; name: string }[]; error?: string };
+					mediaLoading.classList.add('hidden');
+					if (!res.ok) {
+						mediaEmpty.textContent = data.error ?? 'Não foi possível listar as imagens.';
+						mediaEmpty.classList.remove('hidden');
+						return;
+					}
+					const images = data.images ?? [];
+					if (!images.length) {
+						mediaEmpty.classList.remove('hidden');
+						return;
+					}
+					mediaGrid.classList.remove('hidden');
+					for (const { url, name } of images) {
+						const btn = document.createElement('button');
+						btn.type = 'button';
+						btn.className =
+							'relative aspect-square rounded-lg overflow-hidden border border-neutral-200 hover:border-blue-500 focus:outline focus:outline-2 focus:outline-blue-600 bg-neutral-50 group';
+						btn.setAttribute('aria-label', `Inserir imagem ${name}`);
+						const img = document.createElement('img');
+						img.src = url;
+						img.alt = '';
+						img.loading = 'lazy';
+						img.decoding = 'async';
+						img.className = 'w-full h-full object-cover';
+						btn.appendChild(img);
+						btn.addEventListener('click', () => {
+							const block = `<p><img class="wysiwyg-inserted-img" src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(name)}" loading="lazy" decoding="async" /></p>`;
+							insertHtmlAtCaret(editor, block, lastCaretRange);
+							closeMediaModal();
+						});
+						mediaGrid.appendChild(btn);
+					}
+				} catch {
+					mediaLoading.classList.add('hidden');
+					mediaEmpty.textContent = 'Erro de rede ao listar imagens.';
+					mediaEmpty.classList.remove('hidden');
+				}
+			}
+
+			btnYoutube?.addEventListener('mousedown', () => {
+				rememberCaret();
+			});
+			btnYoutube?.addEventListener('click', (e) => {
+				e.preventDefault();
+				const url = window.prompt('URL do vídeo (YouTube):', 'https://www.youtube.com/watch?v=');
+				if (url == null) return;
+				const id = parseYouTubeId(url);
+				if (!id) {
+					window.alert('URL do YouTube inválida. Use um link de um vídeo (watch, youtu.be, embed ou Shorts).');
+					return;
+				}
+				const embed = `https://www.youtube-nocookie.com/embed/${id}`;
+				const html = `<figure class="wysiwyg-youtube-embed" contenteditable="false" data-youtube-id="${id}"><div class="wysiwyg-youtube-inner"><iframe src="${embed}" title="YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></figure><p><br></p>`;
+				insertHtmlAtCaret(editor, html, lastCaretRange);
+			});
+
+			btnMedia?.addEventListener('mousedown', () => {
+				rememberCaret();
+			});
+			btnMedia?.addEventListener('click', (e) => {
+				e.preventDefault();
+				openMediaModal();
+			});
+
+			mediaModalClose?.addEventListener('click', () => closeMediaModal());
+			mediaModal?.addEventListener('click', (e) => {
+				if (e.target === mediaModal) closeMediaModal();
+			});
+
+			const linkModal = document.querySelector('#link-modal');
+			const linkForm = document.querySelector('#link-modal-form');
+			const linkHrefInput = document.querySelector('#link-modal-href');
+			const linkNofollowInput = document.querySelector('#link-modal-nofollow');
+			const linkNewtabInput = document.querySelector('#link-modal-newtab');
+
+			function closeLinkModal() {
+				if (!(linkModal instanceof HTMLElement)) return;
+				linkModal.classList.add('hidden');
+				linkModal.setAttribute('aria-hidden', 'true');
+				editor.focus();
+			}
+
+			function openLinkModal() {
+				if (!(linkModal instanceof HTMLElement)) return;
+				if (linkForm instanceof HTMLFormElement) linkForm.reset();
+				const existing = findAnchorAtSelection(editor);
+				if (existing?.getAttribute('href')) {
+					if (linkHrefInput instanceof HTMLInputElement) linkHrefInput.value = existing.href;
+					if (linkNofollowInput instanceof HTMLInputElement) {
+						linkNofollowInput.checked = /\bnofollow\b/i.test(existing.getAttribute('rel') ?? '');
+					}
+					if (linkNewtabInput instanceof HTMLInputElement) {
+						linkNewtabInput.checked = existing.target === '_blank';
+					}
+				} else if (linkHrefInput instanceof HTMLInputElement) {
+					linkHrefInput.value = 'https://';
+				}
+				linkModal.classList.remove('hidden');
+				linkModal.setAttribute('aria-hidden', 'false');
+				linkHrefInput?.focus();
+				if (linkHrefInput instanceof HTMLInputElement) linkHrefInput.select();
+			}
+
+			document.querySelector('#toolbar-insert-link')?.addEventListener('mousedown', rememberCaret);
+
+			linkForm?.addEventListener('submit', (ev) => {
+				ev.preventDefault();
+				if (!(linkHrefInput instanceof HTMLInputElement)) return;
+				const href = linkHrefInput.value.trim();
+				if (!href) return;
+				const nofollow = linkNofollowInput instanceof HTMLInputElement && linkNofollowInput.checked;
+				const newTab = linkNewtabInput instanceof HTMLInputElement && linkNewtabInput.checked;
+
+				editor.focus();
+				if (lastCaretRange) {
+					const sel = window.getSelection();
+					sel?.removeAllRanges();
+					sel?.addRange(lastCaretRange);
+				}
+
+				document.execCommand('createLink', false, href);
+				const anchor = findAnchorAtSelection(editor);
+				if (anchor) applyLinkOptions(anchor, nofollow, newTab);
+
+				closeLinkModal();
+				syncWysiwygToTextarea();
+				updateWysiwygMetrics();
+				updateToolbarActiveStates();
+			});
+
+			document.querySelector('#link-modal-cancel')?.addEventListener('click', () => closeLinkModal());
+			linkModal?.addEventListener('click', (ev) => {
+				if (ev.target === linkModal) closeLinkModal();
+			});
+
+			document.addEventListener('keydown', (e) => {
+				if (e.key !== 'Escape') return;
+				if (linkModal && !linkModal.classList.contains('hidden')) {
+					closeLinkModal();
+					return;
+				}
+				if (mediaModal && !mediaModal.classList.contains('hidden')) {
+					closeMediaModal();
+				}
+			});
+
+			editor.addEventListener('paste', (e: ClipboardEvent) => {
+				e.preventDefault();
+				const cd = e.clipboardData;
+				if (!cd) return;
+
+				const htmlRaw = cd.getData('text/html').trim();
+				const plain = cd.getData('text/plain').replace(/\r\n/g, '\n');
+
+				if (htmlRaw.length > 0) {
+					const frag = buildPasteFragmentFromHtml(htmlRaw);
+					insertFragmentAtSelection(editor, frag);
+				} else {
+					const html = bodyToHtml(plain);
+					const wrap = document.createElement('div');
+					wrap.innerHTML = html;
+					const frag = document.createDocumentFragment();
+					while (wrap.firstChild) frag.appendChild(wrap.firstChild);
+					insertFragmentAtSelection(editor, frag);
+				}
+			});
+
+			editor.addEventListener('input', () => {
+				syncWysiwygToTextarea();
+				updateWysiwygMetrics();
+			});
+			editor.addEventListener('blur', syncWysiwygToTextarea);
+
+			const btnInsertTable = document.querySelector('#toolbar-insert-table');
+			btnInsertTable?.addEventListener('mousedown', rememberCaret);
+
+			toolbar.addEventListener('click', (e) => {
+				const t = e.target;
+				if (!(t instanceof HTMLElement)) return;
+				const btn = t.closest('button[data-cmd]');
+				if (!(btn instanceof HTMLButtonElement)) return;
+				e.preventDefault();
+				const cmd = btn.getAttribute('data-cmd');
+				const value = btn.getAttribute('data-value');
+
+				if (cmd === 'createLink') {
+					openLinkModal();
+					return;
+				}
+
+				editor.focus();
+
+				if (cmd === 'formatBlock' && value) {
+					document.execCommand('formatBlock', false, value);
+				} else if (cmd === 'insertUnorderedList') {
+					document.execCommand('insertUnorderedList', false);
+				} else if (cmd === 'insertOrderedList') {
+					document.execCommand('insertOrderedList', false);
+				} else if (cmd === 'insertTable') {
+					document.execCommand('insertHTML', false, buildTable3x3Markup());
+				} else if (cmd === 'bold') {
+					document.execCommand('bold', false);
+				} else if (cmd === 'removeFormat') {
+					document.execCommand('removeFormat', false);
+					document.execCommand('unlink', false);
+				}
+				syncWysiwygToTextarea();
+				updateWysiwygMetrics();
+				updateToolbarActiveStates();
+			});
+
+			if (colorInput instanceof HTMLInputElement) {
+				colorInput.addEventListener('input', () => {
+					editor.focus();
+					document.execCommand('foreColor', false, colorInput.value);
+					syncWysiwygToTextarea();
+					updateWysiwygMetrics();
+					updateToolbarActiveStates();
+				});
+			}
+
+			const sourceView = document.querySelector('#wysiwyg-source-view');
+			const btnToggleSource = document.querySelector('#toolbar-toggle-source');
+
+			sourceView?.addEventListener('input', () => {
+				syncWysiwygToTextarea();
+				updateWysiwygMetrics();
+			});
+
+			btnToggleSource?.addEventListener('click', () => {
+				if (!(sourceView instanceof HTMLTextAreaElement) || !(btnToggleSource instanceof HTMLButtonElement)) return;
+
+				const inSourceMode = !sourceView.classList.contains('hidden');
+
+				if (inSourceMode) {
+					editor.innerHTML = sourceView.value;
+					sourceView.classList.add('hidden');
+					sourceView.setAttribute('aria-hidden', 'true');
+					editor.classList.remove('hidden');
+					editor.removeAttribute('aria-hidden');
+					toolbar.classList.remove('wysiwyg-toolbar--source');
+					btnToggleSource.textContent = 'HTML';
+					btnToggleSource.setAttribute('aria-pressed', 'false');
+					editor.focus();
+				} else {
+					sourceView.value = editor.innerHTML;
+					sourceView.classList.remove('hidden');
+					sourceView.removeAttribute('aria-hidden');
+					editor.classList.add('hidden');
+					editor.setAttribute('aria-hidden', 'true');
+					toolbar.classList.add('wysiwyg-toolbar--source');
+					btnToggleSource.textContent = 'Edição visual';
+					btnToggleSource.setAttribute('aria-pressed', 'true');
+					sourceView.focus();
+				}
+				syncWysiwygToTextarea();
+				updateWysiwygMetrics();
+				updateToolbarActiveStates();
+			});
+
+			document.addEventListener('selectionchange', () => {
+				cancelAnimationFrame(toolbarSelectionRaf);
+				toolbarSelectionRaf = requestAnimationFrame(() => updateToolbarActiveStates());
+			});
+
+			syncWysiwygToTextarea();
+			updateWysiwygMetrics();
+			updateToolbarActiveStates();
+		}
+
+		function fillFromInitial() {
+			if (!initialPayload) return;
+			const m = initialPayload;
+			const titleEl = document.querySelector('#field-title');
+			const slugEl = document.querySelector('#field-slug');
+			const descEl = document.querySelector('#field-description');
+			const canonicalEl = document.querySelector('#field-canonical');
+			const draftEl = document.querySelector('#field-draft');
+			const contentEl = document.querySelector('#field-content');
+			const wysiwyg = document.querySelector('#wysiwyg-editor');
+			const extEl = document.querySelector('#field-page-ext');
+			const slugExtHint = document.querySelector('#slug-ext-hint');
+
+			if (titleEl instanceof HTMLInputElement) titleEl.value = m.title;
+			const seoEl = document.querySelector('#field-seo-title');
+			if (seoEl instanceof HTMLInputElement) seoEl.value = m.seoTitle ?? '';
+			if (slugEl instanceof HTMLInputElement) slugEl.value = m.slugBase;
+			if (descEl instanceof HTMLTextAreaElement) descEl.value = m.description;
+			if (canonicalEl instanceof HTMLInputElement) canonicalEl.value = m.canonical ?? '';
+			if (draftEl instanceof HTMLInputElement) draftEl.checked = m.draft;
+			if (extEl instanceof HTMLInputElement) extEl.value = m.ext;
+			if (slugExtHint) slugExtHint.textContent = m.ext;
+
+			const html = bodyToHtml(m.body);
+			if (wysiwyg instanceof HTMLElement && contentEl instanceof HTMLTextAreaElement) {
+				wysiwyg.innerHTML = html;
+				contentEl.value = html;
+			} else if (contentEl instanceof HTMLTextAreaElement) {
+				contentEl.value = m.body;
+			}
+			if (heroHidden instanceof HTMLInputElement && m.heroImage) {
+				heroHidden.value = m.heroImage;
+			}
+			if (m.heroImage && imagePreview instanceof HTMLImageElement) {
+				imagePreview.src = m.heroImage;
+				previewContainer?.classList.remove('hidden');
+			}
+			updateWysiwygMetrics();
+			updateSeoFieldCounts();
+			updateToolbarActiveStates();
+		}
+
+		fillFromInitial();
+		initWysiwygToolbar();
+
+		const titleElBind = document.querySelector('#field-title');
+		const slugElBind = document.querySelector('#field-slug');
+		titleElBind?.addEventListener('input', () => {
+			if (
+				!slugManuallyEdited &&
+				slugElBind instanceof HTMLInputElement &&
+				titleElBind instanceof HTMLInputElement
+			) {
+				const s = slugifyTitle(titleElBind.value);
+				if (s) slugElBind.value = s;
+			}
+			updateSeoIntelligence();
+		});
+		slugElBind?.addEventListener('input', () => {
+			slugManuallyEdited = true;
+			updateSeoIntelligence();
+		});
+		document.querySelector('#field-seo-title')?.addEventListener('input', updateSeoFieldCounts);
+		document.querySelector('#field-description')?.addEventListener('input', updateSeoFieldCounts);
+		updateSeoFieldCounts();
+
+		fileInput?.addEventListener('change', async (e) => {
+			const target = e.target;
+			if (!(target instanceof HTMLInputElement) || !target.files?.length) return;
+			const file = target.files[0];
+			const formData = new FormData();
+			formData.append('image', file);
+			formData.append('title', document.querySelector('#field-title')?.value ?? file.name);
+
+			try {
+				const response = await fetch('/api/upload', {
+					method: 'POST',
+					body: formData,
+					credentials: 'same-origin',
+				});
+				const data = await response.json();
+
+				if (!response.ok) {
+					alert(data.error ?? 'Falha no upload.');
+					return;
+				}
+
+				if (data.url && heroHidden instanceof HTMLInputElement) {
+					heroHidden.value = data.url;
+				}
+				if (data.url && imagePreview instanceof HTMLImageElement) {
+					imagePreview.src = data.url;
+				}
+				previewContainer?.classList.remove('hidden');
+			} catch (err) {
+				alert(err instanceof Error ? err.message : 'Erro de rede no upload.');
+			}
+		});
+
+		function resetEditorAfterSave(options: { isNewPage: boolean }) {
+			if (!options.isNewPage) return;
+
+			const empty = '<p><br></p>';
+			const { editor: ed, textarea: ta } = getWysiwygEls();
+			if (ed) {
+				ed.innerHTML = empty;
+				ed.classList.remove('hidden');
+				ed.removeAttribute('aria-hidden');
+			}
+			if (ta instanceof HTMLTextAreaElement) ta.value = empty;
+			const srcReset = document.querySelector('#wysiwyg-source-view');
+			if (srcReset instanceof HTMLTextAreaElement) {
+				srcReset.value = empty;
+				srcReset.classList.add('hidden');
+				srcReset.setAttribute('aria-hidden', 'true');
+			}
+			const toolbarReset = document.querySelector('#wysiwyg-toolbar');
+			toolbarReset?.classList.remove('wysiwyg-toolbar--source');
+			const btnSrc = document.querySelector('#toolbar-toggle-source');
+			if (btnSrc instanceof HTMLButtonElement) {
+				btnSrc.textContent = 'HTML';
+				btnSrc.setAttribute('aria-pressed', 'false');
+			}
+			updateWysiwygMetrics();
+
+			const formEl = document.querySelector('#page-editor-form');
+			if (formEl instanceof HTMLFormElement) {
+				formEl.reset();
+			}
+			const extReset = document.querySelector('#field-page-ext');
+			if (extReset instanceof HTMLInputElement) extReset.value = '.md';
+			const slugExtHintReset = document.querySelector('#slug-ext-hint');
+			if (slugExtHintReset) slugExtHintReset.textContent = '.md';
+			const canonicalReset = document.querySelector('#field-canonical');
+			if (canonicalReset instanceof HTMLInputElement) canonicalReset.value = '';
+			const heroInput = document.querySelector('#heroImage-url');
+			if (heroInput instanceof HTMLInputElement) heroInput.value = '';
+			const previewContainerEl = document.querySelector('#preview-container');
+			previewContainerEl?.classList.add('hidden');
+			if (imagePreview instanceof HTMLImageElement) {
+				imagePreview.removeAttribute('src');
+			}
+			if (fileInput instanceof HTMLInputElement) fileInput.value = '';
+			const seoReset = document.querySelector('#field-seo-title');
+			if (seoReset instanceof HTMLInputElement) seoReset.value = '';
+			slugManuallyEdited = false;
+			currentRelativePath = null;
+			updateSeoFieldCounts();
+		}
+
+		function normalizePageSlugSegments(raw: string): string {
+			let s = raw.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+			if (!s) return '';
+			const withoutExt = s.replace(/\.(md|mdx)$/i, '');
+			const parts = withoutExt.split('/').filter(Boolean);
+			for (const p of parts) {
+				if (!/^[\w-]+$/.test(p)) return '';
+			}
+			return parts.join('/');
+		}
+
+		const form = document.querySelector('#page-editor-form');
+		form?.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			if (!(form instanceof HTMLFormElement)) return;
+
+			const { editor, textarea } = getWysiwygEls();
+			const sourcePanel = document.querySelector('#wysiwyg-source-view');
+			const htmlBody =
+				sourcePanel instanceof HTMLTextAreaElement && !sourcePanel.classList.contains('hidden')
+					? sourcePanel.value
+					: (editor?.innerHTML ?? '');
+			if (textarea instanceof HTMLTextAreaElement) {
+				textarea.value = htmlBody;
+			}
+
+			const plain = stripHtmlToPlain(htmlBody);
+			const hasEmbeddedMedia = /<(iframe|img|figure|video|table)\b/i.test(htmlBody);
+			if (!plain && !hasEmbeddedMedia) {
+				window.alert('O conteúdo da página é obrigatório.');
+				if (sourcePanel instanceof HTMLTextAreaElement && !sourcePanel.classList.contains('hidden')) {
+					sourcePanel.focus();
+				} else {
+					editor?.focus();
+				}
+				return;
+			}
+
+			const fd = new FormData(form);
+
+			const slugRaw = (fd.get('slug') ?? '').toString().trim();
+			const base = normalizePageSlugSegments(slugRaw);
+			if (!base.length) {
+				alert(
+					'Defina um slug válido: segmentos com letras, números e hífens, separados por / (ex.: contactos ou legal/privacidade).',
+				);
+				return;
+			}
+
+			const extEl = document.querySelector('#field-page-ext');
+			const ext =
+				extEl instanceof HTMLInputElement && extEl.value.trim().toLowerCase() === '.mdx'
+					? '.mdx'
+					: '.md';
+			const relativePath = `${base}${ext}`;
+
+			if (!SAFE_PAGES_REL_PATH_JS.test(relativePath)) {
+				alert('Caminho do ficheiro inválido. Verifique o slug e a extensão.');
+				return;
+			}
+
+			const draftEl = document.querySelector('#field-draft');
+			const draft = draftEl instanceof HTMLInputElement && draftEl.checked;
+
+			const heroEl = document.querySelector('#heroImage-url');
+			const heroImage =
+				heroEl instanceof HTMLInputElement && heroEl.value.trim()
+					? heroEl.value.trim()
+					: undefined;
+
+			const seoTitleRaw = (fd.get('seoTitle') ?? '').toString().trim();
+			const canonicalEl = document.querySelector('#field-canonical');
+			const canonicalRaw =
+				canonicalEl instanceof HTMLInputElement ? canonicalEl.value.trim() : '';
+
+			const { data, error } = await actions.saveStaticPage({
+				relativePath,
+				previousRelativePath:
+					currentRelativePath && currentRelativePath !== relativePath
+						? currentRelativePath
+						: undefined,
+				title: (fd.get('title') ?? '').toString().trim(),
+				seoTitle: seoTitleRaw || undefined,
+				description: (fd.get('description') ?? '').toString().trim(),
+				draft,
+				heroImage,
+				canonical: canonicalRaw || undefined,
+				body: htmlBody,
+			});
+
+			if (error) {
+				alert(error.message);
+				return;
+			}
+			currentRelativePath = data.relativePath;
+			window.alert(`Página gravada com sucesso: ${data.relativePath}`);
+			resetEditorAfterSave({ isNewPage: !initialPayload });
+		});
+	</script>
+</DashboardLayout>

@@ -1,0 +1,26 @@
+---
+/**
+ * Compatibilidade: mesmo comportamento de sempre (cookie admin), shell novo em AdminLayout.
+ */
+import AdminLayout from './AdminLayout.astro';
+
+interface Props {
+	title: string;
+	heading?: string;
+	sectionTitle?: string;
+	sectionActionLabel?: string;
+	sectionActionHref?: string;
+}
+
+const { title, heading, sectionTitle, sectionActionLabel, sectionActionHref } = Astro.props;
+---
+
+<AdminLayout
+	title={title}
+	heading={heading}
+	sectionTitle={sectionTitle}
+	sectionActionLabel={sectionActionLabel}
+	sectionActionHref={sectionActionHref}
+>
+	<slot />
+</AdminLayout>

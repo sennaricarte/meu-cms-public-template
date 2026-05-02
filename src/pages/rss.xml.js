@@ -1,3 +1,6 @@
+// Feed RSS gerado em build time — arquivo estático.
+export const prerender = true;
+
 import { getCollection } from 'astro:content';
 import rss from '@astrojs/rss';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';

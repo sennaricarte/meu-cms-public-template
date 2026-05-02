@@ -1,0 +1,158 @@
+---
+/**
+ * /admin/login — autenticação com ADMIN_USER + ADMIN_PASS (.env).
+ */
+import {
+	ADMIN_SESSION_COOKIE,
+	adminEnvConfigured,
+	getAdminCredentials,
+	getAdminSessionTokenValue,
+	isValidAdminSession,
+	timingSafeStringEq,
+} from '../../lib/admin-session';
+
+const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 horas
+
+const session = Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+if (adminEnvConfigured() && isValidAdminSession(session)) {
+	return Astro.redirect('/admin/dashboard');
+}
+
+let error = '';
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData();
+	const username = form.get('username')?.toString() ?? '';
+	const password = form.get('password')?.toString() ?? '';
+
+	const creds = getAdminCredentials();
+
+	if (!adminEnvConfigured() || !creds) {
+		error = 'Defina ADMIN_USER e ADMIN_PASS no arquivo .env.';
+	} else if (
+		timingSafeStringEq(username.trim(), creds.user) &&
+		timingSafeStringEq(password.trim(), creds.pass)
+	) {
+		const token = getAdminSessionTokenValue();
+		if (token) {
+			Astro.cookies.set(ADMIN_SESSION_COOKIE, token, {
+				httpOnly: true,
+				path: '/',
+				maxAge: COOKIE_MAX_AGE,
+				sameSite: 'strict',
+				secure: import.meta.env.PROD,
+			});
+			return Astro.redirect('/admin/dashboard');
+		}
+		error = 'Falha ao criar sessão. Verifique SESSION_SECRET ou ADMIN_PASS.';
+	} else {
+		error = 'Utilizador ou senha incorretos.';
+	}
+}
+---
+
+<!doctype html>
+<html lang="pt-br">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="robots" content="noindex, nofollow" />
+	<title>Admin — Login</title>
+	<link rel="icon" href="/favicon.ico" />
+	<style>
+		*, *::before, *::after { box-sizing: border-box; }
+		body {
+			margin: 0;
+			font-family: system-ui, sans-serif;
+			background: #f8fafc;
+			display: flex;
+			min-height: 100dvh;
+			align-items: center;
+			justify-content: center;
+		}
+		.card {
+			background: #fff;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 2.5rem 2rem;
+			width: 100%;
+			max-width: 380px;
+			box-shadow: 0 4px 24px rgba(0,0,0,.06);
+		}
+		h1 { margin: 0 0 .25rem; font-size: 1.4rem; color: #0f172a; }
+		.subtitle { margin: 0 0 2rem; font-size: .875rem; color: #64748b; }
+		label { display: block; font-size: .8125rem; font-weight: 600; color: #374151; margin-bottom: .4rem; }
+		input[type="text"], input[type="password"] {
+			width: 100%; padding: .6rem .75rem;
+			border: 1px solid #d1d5db; border-radius: 8px;
+			font-size: 1rem; outline: none;
+			transition: border-color .15s;
+		}
+		input:focus { border-color: #2337ff; box-shadow: 0 0 0 3px rgba(35,55,255,.12); }
+		.field { margin-bottom: 1rem; }
+		button {
+			margin-top: .5rem; width: 100%;
+			background: #2337ff; color: #fff;
+			border: none; border-radius: 8px;
+			padding: .7rem 1rem; font-size: .9375rem;
+			font-weight: 600; cursor: pointer;
+			transition: background .15s;
+		}
+		button:hover { background: #000d8a; }
+		.error {
+			margin-top: 1rem; padding: .625rem .875rem;
+			background: #fef2f2; border: 1px solid #fecaca;
+			border-radius: 8px; color: #991b1b;
+			font-size: .8125rem;
+		}
+		.warning {
+			margin-top: 1rem; padding: .625rem .875rem;
+			background: #fffbeb; border: 1px solid #fcd34d;
+			border-radius: 8px; color: #92400e;
+			font-size: .8125rem;
+		}
+	</style>
+</head>
+<body>
+	<main class="card">
+		<h1>Admin</h1>
+		<p class="subtitle">Acesso restrito ao painel.</p>
+
+		{!adminEnvConfigured() && (
+			<div class="warning" role="alert">
+				<strong>Atenção:</strong> defina <code>ADMIN_USER</code> e <code>ADMIN_PASS</code> no <code>.env</code>.
+			</div>
+		)}
+
+		<form method="POST" autocomplete="username">
+			<div class="field">
+				<label for="username">Utilizador</label>
+				<input
+					id="username"
+					name="username"
+					type="text"
+					autocomplete="username"
+					required
+					autofocus
+				/>
+			</div>
+			<div class="field">
+				<label for="password">Senha</label>
+				<input
+					id="password"
+					name="password"
+					type="password"
+					autocomplete="current-password"
+					placeholder="••••••••"
+					required
+					aria-describedby={error ? 'login-error' : undefined}
+				/>
+			</div>
+			{error && (
+				<div id="login-error" class="error" role="alert">{error}</div>
+			)}
+			<button type="submit">Entrar</button>
+		</form>
+	</main>
+</body>
+</html>

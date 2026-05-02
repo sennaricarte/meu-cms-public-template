@@ -1,49 +1,252 @@
 ---
+// Gerada em build time — conteúdo estático da Content Collection.
+export const prerender = true;
+
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
+import FormattedDate from '../components/FormattedDate.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
+import PostCard from '../components/PostCard.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+const allPosts = (await getCollection('blog'))
+	.filter((post) => !post.data.draft)
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const [featured, ...gridPosts] = allPosts.slice(0, 7);
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="pt-br">
 	<head>
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 	</head>
-	<body>
+
+	<body class="bg-white text-gray-900 antialiased">
 		<Header />
-		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
-			<p>
-				Welcome to the official <a href="https://astro.build/">Astro</a> blog starter template. This template
-				serves as a lightweight, minimally-styled starting point for anyone looking to build a personal
-				website, blog, or portfolio with Astro.
-			</p>
-			<p>
-				This template comes with a few integrations already configured in your
-				<code>astro.config.mjs</code> file. You can customize your setup with
-				<a href="https://astro.build/integrations">Astro Integrations</a> to add tools like Tailwind,
-				React, or Vue to your project.
-			</p>
-			<p>Here are a few ideas on how to get started with the template:</p>
-			<ul>
-				<li>Edit this page in <code>src/pages/index.astro</code></li>
-				<li>Edit the site header items in <code>src/components/Header.astro</code></li>
-				<li>Add your name to the footer in <code>src/components/Footer.astro</code></li>
-				<li>Check out the included blog posts in <code>src/content/blog/</code></li>
-				<li>Customize the blog post page layout in <code>src/layouts/BlogPost.astro</code></li>
-			</ul>
-			<p>
-				Have fun! If you get stuck, remember to
-				<a href="https://docs.astro.build/">read the docs</a>
-				or <a href="https://astro.build/chat">join us on Discord</a> to ask questions.
-			</p>
-			<p>
-				Looking for a blog template with a bit more personality? Check out
-				<a href="https://github.com/Charca/astro-blog-template">astro-blog-template</a>
-				by <a href="https://twitter.com/Charca">Maxi Ferreira</a>.
-			</p>
+
+		<main id="main-content" class="w-full max-w-none">
+
+			<!-- ═══════════════════════════════════════════════════════════ -->
+			<!-- HERO                                                        -->
+			<!-- ═══════════════════════════════════════════════════════════ -->
+			<section
+				aria-labelledby="hero-heading"
+				class="relative overflow-hidden bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-20 sm:py-28 lg:py-36"
+			>
+				<!-- Blobs decorativos (aria-hidden — puramente visuais) -->
+				<div
+					aria-hidden="true"
+					class="pointer-events-none absolute -top-32 -right-32 h-[28rem] w-[28rem] rounded-full bg-[var(--accent)] opacity-[0.06] blur-3xl"
+				></div>
+				<div
+					aria-hidden="true"
+					class="pointer-events-none absolute -bottom-32 -left-32 h-[28rem] w-[28rem] rounded-full bg-indigo-500 opacity-[0.06] blur-3xl"
+				></div>
+
+				<div class="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
+					<!-- Rótulo acima do título -->
+					<p
+						class="mb-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-[var(--accent)]"
+					>
+						<span aria-hidden="true" class="h-px w-6 bg-[var(--accent)]"></span>
+						Bem-vindo ao blog
+						<span aria-hidden="true" class="h-px w-6 bg-[var(--accent)]"></span>
+					</p>
+
+					<!-- Título principal — H1 de toda a página -->
+					<h1
+						id="hero-heading"
+						class="mb-6 text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl"
+					>
+						{SITE_TITLE}
+					</h1>
+
+					<!-- Descrição do blog -->
+					<p class="mx-auto mb-10 max-w-xl text-lg leading-relaxed text-gray-600 sm:text-xl">
+						{SITE_DESCRIPTION}
+					</p>
+
+					<!-- CTA principal -->
+					<a
+						href="/blog"
+						class="inline-flex items-center gap-2 rounded-full bg-[var(--accent)] px-7 py-3.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:bg-[var(--accent-dark)] hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent)]"
+						aria-label="Ver todos os artigos do blog"
+					>
+						Ler os artigos
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							class="h-4 w-4"
+							viewBox="0 0 20 20"
+							fill="currentColor"
+							aria-hidden="true"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+								clip-rule="evenodd"
+							></path>
+						</svg>
+					</a>
+				</div>
+			</section>
+
+			<!-- ═══════════════════════════════════════════════════════════ -->
+			<!-- CONTEÚDO DOS POSTS                                          -->
+			<!-- ═══════════════════════════════════════════════════════════ -->
+			<div class="mx-auto max-w-7xl space-y-16 px-6 py-12">
+
+				<!-- ─── Post em destaque ─────────────────────────────────── -->
+				{featured && (
+					<section aria-labelledby="featured-heading">
+						<h2
+							id="featured-heading"
+							class="mb-6 text-xs font-bold uppercase tracking-[0.15em] text-gray-400"
+						>
+							Artigo em destaque
+						</h2>
+
+						<a
+							href={`/blog/${featured.id}/`}
+							class="group block overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--accent)]"
+							aria-label={`Ler artigo: ${featured.data.title}`}
+						>
+							<div class="grid md:grid-cols-2">
+								<!-- Imagem do post em destaque -->
+								{featured.data.heroImage && (
+									<div class="overflow-hidden bg-gray-100 aspect-video md:aspect-auto">
+										<Image
+											src={featured.data.heroImage}
+											alt={featured.data.title}
+											width={720}
+											height={450}
+											class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+										/>
+									</div>
+								)}
+
+								<!-- Conteúdo textual -->
+								<div class="flex flex-col justify-center p-8 lg:p-10">
+									<!-- Tags -->
+									{featured.data.tags && featured.data.tags.length > 0 && (
+										<div class="mb-4 flex flex-wrap gap-2" aria-label="Tags do artigo">
+											{featured.data.tags.slice(0, 3).map((tag) => (
+												<span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--accent)]">
+													#{tag}
+												</span>
+											))}
+										</div>
+									)}
+
+									<!-- Título -->
+									<h3 class="mb-3 text-2xl font-bold leading-snug text-gray-900 transition-colors duration-200 group-hover:text-[var(--accent)] lg:text-3xl">
+										{featured.data.title}
+									</h3>
+
+									<!-- Descrição -->
+									<p class="mb-6 line-clamp-3 leading-relaxed text-gray-500">
+										{featured.data.description}
+									</p>
+
+									<!-- Meta: data e autor -->
+									<div class="flex items-center gap-3 text-sm text-gray-400">
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="h-4 w-4 shrink-0"
+											viewBox="0 0 20 20"
+											fill="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												fill-rule="evenodd"
+												d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+												clip-rule="evenodd"
+											></path>
+										</svg>
+										<FormattedDate date={featured.data.pubDate} />
+										{featured.data.author && (
+											<>
+												<span aria-hidden="true">·</span>
+												<span>{featured.data.author}</span>
+											</>
+										)}
+									</div>
+
+									<!-- Label "Ler artigo" -->
+									<p class="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--accent)] transition-gap duration-200 group-hover:gap-2.5">
+										Ler artigo completo
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											class="h-4 w-4"
+											viewBox="0 0 20 20"
+											fill="currentColor"
+											aria-hidden="true"
+										>
+											<path
+												fill-rule="evenodd"
+												d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+												clip-rule="evenodd"
+											></path>
+										</svg>
+									</p>
+								</div>
+							</div>
+						</a>
+					</section>
+				)}
+
+				<!-- ─── Grid de artigos ──────────────────────────────────── -->
+				{gridPosts.length > 0 && (
+					<section aria-labelledby="posts-grid-heading" class="pb-20 pt-10">
+						<h2
+							id="posts-grid-heading"
+							class="mb-6 text-xs font-bold uppercase tracking-[0.15em] text-gray-400"
+						>
+							Últimos artigos
+						</h2>
+
+						<ul
+							class="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3"
+							role="list"
+							aria-label="Lista de artigos recentes"
+						>
+							{gridPosts.map((post) => (
+								<li class="flex">
+									<PostCard post={post} />
+								</li>
+							))}
+						</ul>
+
+						<!-- Link "ver todos" -->
+						<div class="mt-10 text-center">
+							<a
+								href="/blog"
+								class="inline-flex items-center gap-2 text-sm font-semibold text-[var(--accent)] transition-colors duration-200 hover:text-[var(--accent-dark)]"
+								aria-label="Ver todos os artigos do blog"
+							>
+								Ver todos os artigos
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									class="h-4 w-4"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+									aria-hidden="true"
+								>
+									<path
+										fill-rule="evenodd"
+										d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+										clip-rule="evenodd"
+									></path>
+								</svg>
+							</a>
+						</div>
+					</section>
+				)}
+			</div>
 		</main>
+
 		<Footer />
 	</body>
 </html>

@@ -1,4 +1,8 @@
 ---
+// Gerada em build time — uma rota por post da Content Collection.
+// getStaticPaths() é chamado em build graças ao prerender = true.
+export const prerender = true;
+
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
 
@@ -15,6 +19,6 @@ const post = Astro.props;
 const { Content } = await render(post);
 ---
 
-<BlogPost {...post.data}>
+<BlogPost {...post.data} slug={post.id}>
 	<Content />
 </BlogPost>

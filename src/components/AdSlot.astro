@@ -1,0 +1,246 @@
+---
+/**
+ * AdSlot.astro
+ *
+ * Placeholder inteligente para anúncios (AdSense ou banners de afiliados).
+ *
+ * ── Estratégia de performance ───────────────────────────────────────────────
+ *  1. ZERO CLS   → espaço reservado com min-height explícita por tipo de slot.
+ *  2. Lazy load  → IntersectionObserver dispara o carregamento apenas quando
+ *                  o slot está a 200 px do viewport. Nenhum script de ad é
+ *                  carregado em páginas onde o slot não aparece.
+ *  3. Async      → adsbygoogle.js é injetado com `async` + sem `defer`
+ *                  (requisito do AdSense) somente quando necessário.
+ *  4. Isolado    → cada instância tem um ID único; vários slots na mesma
+ *                  página funcionam de forma independente.
+ *
+ * ── Modos de uso ────────────────────────────────────────────────────────────
+ *
+ *  MODO ADSENSE (automático via props)
+ *  <AdSlot type="rectangle" adClient="ca-pub-XXXXXXXXXXXXXXXX" adSlot="1234567890" />
+ *
+ *  MODO CUSTOM HTML (slot padrão do Astro)
+ *  <AdSlot type="banner">
+ *    <a href="https://afiliado.com" target="_blank" rel="sponsored noopener">
+ *      <img src="/banners/parceiro.jpg" alt="Banner parceiro" width="728" height="90" />
+ *    </a>
+ *  </AdSlot>
+ *
+ * ── Tipos de slot (dimensões reservadas) ────────────────────────────────────
+ *  banner      → 728×90  px  — Leaderboard (topo/rodapé de artigos)
+ *  rectangle   → 300×250 px  — Medium Rectangle (in-content / sidebar)
+ *  in-article  → 100% × 100px — Responsivo (dentro do corpo do artigo)
+ *  sidebar     → 300×600 px  — Half Page (coluna lateral)
+ */
+
+export type AdSlotType = 'banner' | 'rectangle' | 'in-article' | 'sidebar';
+
+interface Props {
+	/**
+	 * Tipo do slot — controla as dimensões reservadas para prevenir CLS.
+	 * @default 'rectangle'
+	 */
+	type?: AdSlotType;
+
+	/** Publisher ID do AdSense (ex: 'ca-pub-1234567890123456'). */
+	adClient?: string;
+
+	/** ID numérico do slot no painel do AdSense. */
+	adSlot?: string;
+
+	/**
+	 * Formato do anúncio AdSense.
+	 * @default 'auto'
+	 */
+	adFormat?: 'auto' | 'fluid' | 'rectangle' | 'vertical' | 'horizontal';
+
+	/** Label acessível exibido no placeholder e para leitores de tela. */
+	label?: string;
+
+	/** Classes Tailwind extras para o wrapper externo. */
+	class?: string;
+}
+
+const {
+	type       = 'rectangle',
+	adClient,
+	adSlot: adSlotId,
+	adFormat   = 'auto',
+	label      = 'Publicidade',
+	class: className,
+} = Astro.props;
+
+// ID único por instância — necessário quando há vários slots na mesma página
+const uid = `ad-${Math.random().toString(36).slice(2, 9)}`;
+
+const isAdSense = Boolean(adClient && adSlotId);
+
+// Dimensões reservadas por tipo — chave para CLS = 0
+const sizes: Record<AdSlotType, { minH: string; maxW: string; aspect: string }> = {
+	banner:       { minH: 'min-h-[90px]',  maxW: 'max-w-[728px]', aspect: '' },
+	rectangle:    { minH: 'min-h-[250px]', maxW: 'max-w-[300px]', aspect: '' },
+	'in-article': { minH: 'min-h-[100px]', maxW: 'max-w-full',    aspect: '' },
+	sidebar:      { minH: 'min-h-[600px]', maxW: 'max-w-[300px]', aspect: '' },
+};
+
+const { minH, maxW } = sizes[type];
+---
+
+<!--
+	Wrapper externo: centraliza o slot e aplica max-width por tipo.
+	aria-label identifica a região para leitores de tela.
+-->
+<div
+	id={uid}
+	data-ad-type={type}
+	data-ad-client={adClient}
+	data-ad-slot={adSlotId}
+	data-ad-format={adFormat}
+	data-ad-mode={isAdSense ? 'adsense' : 'custom'}
+	aria-label={label}
+	class:list={[
+		'mx-auto w-full overflow-hidden',
+		maxW,
+		className,
+	]}
+>
+	<!--
+		Placeholder: sempre renderizado com min-height explícita.
+		Visível enquanto o anúncio não carregou — previne CLS.
+		Ocultado via JS quando o ad real aparecer.
+	-->
+	<div
+		data-ad-placeholder
+		aria-hidden="true"
+		class:list={[
+			'flex w-full items-center justify-center',
+			'rounded-lg border border-dashed border-gray-200 bg-gray-50',
+			'transition-opacity duration-300',
+			minH,
+		]}
+	>
+		<span class="select-none text-xs font-medium uppercase tracking-widest text-gray-300">
+			{label}
+		</span>
+	</div>
+
+	<!--
+		Conteúdo real do anúncio.
+		• Modo AdSense: o <ins> é injetado dinamicamente pelo script.
+		• Modo Custom:  o <slot> já contém o HTML do banner.
+		Ambos ficam ocultos até o IntersectionObserver disparar.
+	-->
+	<div
+		data-ad-content
+		class="hidden w-full"
+		aria-label={label}
+	>
+		{isAdSense ? (
+			<!--
+				<ins> do AdSense — renderizado no SSR para que o Googlebot
+				o veja, mas o push() só é chamado via JS no cliente.
+			-->
+			<ins
+				class="adsbygoogle block"
+				style={`display:block;min-height:${minH.replace('min-h-[', '').replace(']', '')}`}
+				data-ad-client={adClient}
+				data-ad-slot={adSlotId}
+				data-ad-format={adFormat}
+				data-full-width-responsive="true"
+			></ins>
+		) : (
+			<slot />
+		)}
+	</div>
+</div>
+
+<script>
+/**
+ * Lógica de lazy loading de anúncios.
+ *
+ * Fluxo:
+ *  1. Encontra todos os wrappers [data-ad-mode] na página.
+ *  2. Cria um IntersectionObserver com margem de 200 px (pré-carregamento).
+ *  3. Quando o slot cruza o threshold:
+ *     a. (AdSense) Carrega adsbygoogle.js (uma vez) e chama push({}).
+ *     b. (Custom)  Apenas revela o conteúdo do slot.
+ *  4. Oculta o placeholder e mostra o conteúdo real com fade.
+ *  5. Para de observar o slot após disparar (cada slot carrega uma vez).
+ */
+
+/** Evita carregar adsbygoogle.js mais de uma vez por página. */
+let adSenseScriptLoaded = false;
+
+function loadAdSenseScript(publisherId: string): Promise<void> {
+	if (adSenseScriptLoaded) return Promise.resolve();
+	return new Promise((resolve) => {
+		const script    = document.createElement('script');
+		script.async    = true;
+		script.src      = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${publisherId}`;
+		script.crossOrigin = 'anonymous';
+		script.onload   = () => { adSenseScriptLoaded = true; resolve(); };
+		script.onerror  = () => resolve(); // Falha silenciosa — não quebra o layout
+		document.head.appendChild(script);
+	});
+}
+
+function revealAd(wrapper: HTMLElement): void {
+	const placeholder = wrapper.querySelector<HTMLElement>('[data-ad-placeholder]');
+	const content     = wrapper.querySelector<HTMLElement>('[data-ad-content]');
+	if (!placeholder || !content) return;
+
+	// Substitui o placeholder pelo conteúdo real com fade
+	placeholder.style.opacity = '0';
+	setTimeout(() => {
+		placeholder.style.display = 'none';
+		content.classList.remove('hidden');
+		content.classList.add('block');
+	}, 300);
+}
+
+async function activateSlot(wrapper: HTMLElement): Promise<void> {
+	const mode      = wrapper.dataset.adMode;
+	const client    = wrapper.dataset.adClient ?? '';
+	const slot      = wrapper.dataset.adSlot   ?? '';
+	const format    = wrapper.dataset.adFormat  ?? 'auto';
+
+	if (mode === 'adsense' && client && slot) {
+		await loadAdSenseScript(client);
+
+		// push() ativa o preenchimento do <ins> pelo AdSense
+		try {
+			(
+				(window as typeof window & { adsbygoogle: unknown[] }).adsbygoogle =
+				(window as typeof window & { adsbygoogle: unknown[] }).adsbygoogle || []
+			).push({});
+		} catch {
+			// AdBlocker presente — slot fica no placeholder silenciosamente
+		}
+	}
+
+	// Em ambos os modos, exibe o conteúdo e oculta o placeholder
+	revealAd(wrapper);
+}
+
+// ── IntersectionObserver ───────────────────────────────────────────────────
+const observer = new IntersectionObserver(
+	(entries) => {
+		entries.forEach((entry) => {
+			if (!entry.isIntersecting) return;
+			const wrapper = entry.target as HTMLElement;
+			observer.unobserve(wrapper); // Dispara apenas uma vez por slot
+			activateSlot(wrapper);
+		});
+	},
+	{
+		// Começa a carregar 200 px antes do slot entrar na tela
+		rootMargin: '200px 0px',
+		threshold:  0,
+	},
+);
+
+// Observa todos os slots da página
+document
+	.querySelectorAll<HTMLElement>('[data-ad-mode]')
+	.forEach((el) => observer.observe(el));
+</script>

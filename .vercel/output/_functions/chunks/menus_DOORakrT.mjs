@@ -1,0 +1,760 @@
+import { c as createComponent } from './astro-component_2VF1it0G.mjs';
+import 'piccolore';
+import { U as renderTemplate, bd as defineScriptVars, D as maybeRenderHead } from './sequence_Cm0YKoB9.mjs';
+import { r as renderComponent } from './entrypoint_BkVNsX5w.mjs';
+import { $ as $$DashboardLayout } from './DashboardLayout_Do4mMRWJ.mjs';
+import { r as readMainMenu, b as readFooterMenu } from './menu-data_DwFVreFB.mjs';
+
+var __freeze = Object.freeze;
+var __defProp = Object.defineProperty;
+var __template = (cooked, raw) => __freeze(__defProp(cooked, "raw", { value: __freeze(raw || cooked.slice()) }));
+var _a;
+const prerender = false;
+const $$Menus = createComponent(async ($$result, $$props, $$slots) => {
+  const mainMenu = await readMainMenu();
+  const footerMenu = await readFooterMenu();
+  return renderTemplate`${renderComponent($$result, "DashboardLayout", $$DashboardLayout, { "title": "Menus — Admin", "heading": "Menus" }, { "default": async ($$result2) => renderTemplate(_a || (_a = __template([" ", '<div class="space-y-6"> <p class="text-sm text-neutral-600">\nFicheiros:', ' <code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200">menu-main.json</code> ·', ' <code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200">menu-footer.json</code>. Arrasta pela alça para ordenar.\n</p> <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 mb-6"> <div class="flex gap-0 border-b border-transparent" role="tablist" aria-label="Menu a editar"> <button type="button" id="tab-main" role="tab" aria-selected="true" aria-controls="panel-main" class="rounded-t-lg border border-b-0 border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-[inset_0_-1px_0_0_white] relative z-[1]">\nMenu Principal\n</button> <button type="button" id="tab-footer" role="tab" aria-selected="false" aria-controls="panel-footer" class="rounded-t-lg border border-transparent border-b-neutral-200 bg-neutral-200/80 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-200">\nMenu de Rodapé\n</button> </div> <button type="button" id="btn-save-menu" class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600">\nSalvar Menu\n</button> </div> <p id="save-status" class="text-sm text-neutral-600 mb-6 min-h-[1.25rem]" role="status" aria-live="polite"></p> <!-- Painel: Menu Principal --> <div id="panel-main" role="tabpanel" aria-labelledby="tab-main" class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"> <div class="lg:grid lg:grid-cols-[minmax(260px,300px)_1fr] lg:gap-8 lg:items-start"> <div class="mb-8 lg:mb-0 lg:sticky lg:top-24 space-y-4"> <h2 class="text-lg font-semibold text-neutral-900">Menu Principal</h2> <form id="form-add-main" class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3"> <p class="text-sm font-medium text-neutral-800">Adicionar link</p> <div> <label for="add-main-label" class="block text-xs font-semibold text-neutral-700 mb-1">Label</label> <input id="add-main-label" type="text" maxlength="120" required autocomplete="off" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white" placeholder="Ex.: Blog"> </div> <div> <label for="add-main-url" class="block text-xs font-semibold text-neutral-700 mb-1">URL</label> <input id="add-main-url" type="text" maxlength="512" required autocomplete="off" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm font-mono bg-white" placeholder="/blog"> </div> <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">\nAdicionar à lista\n</button> </form> </div> <div class="min-w-0"> <h3 class="text-sm font-semibold text-neutral-800 mb-3">Itens (arrastar para ordenar)</h3> <div id="main-sortable-list" class="flex flex-col gap-3 min-h-[3rem]"></div> <p id="main-empty" class="text-sm text-neutral-500 italic py-6 hidden">\nNenhum item. Usa o formulário ao lado para adicionar.\n</p> </div> </div> </div> <!-- Painel: Menu de Rodapé --> <div id="panel-footer" role="tabpanel" aria-labelledby="tab-footer" hidden class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm mt-6"> <div class="lg:grid lg:grid-cols-[minmax(260px,300px)_1fr] lg:gap-8 lg:items-start"> <div class="mb-8 lg:mb-0 lg:sticky lg:top-24 space-y-4"> <h2 class="text-lg font-semibold text-neutral-900">Menu de Rodapé</h2> <form id="form-add-footer" class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3"> <p class="text-sm font-medium text-neutral-800">Adicionar link</p> <div> <label for="add-footer-label" class="block text-xs font-semibold text-neutral-700 mb-1">Label</label> <input id="add-footer-label" type="text" maxlength="120" required autocomplete="off" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white" placeholder="Ex.: Contactos"> </div> <div> <label for="add-footer-url" class="block text-xs font-semibold text-neutral-700 mb-1">URL</label> <input id="add-footer-url" type="text" maxlength="512" required autocomplete="off" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm font-mono bg-white" placeholder="/contactos"> </div> <div> <label for="add-footer-column" class="block text-xs font-semibold text-neutral-700 mb-1">Coluna</label> <select id="add-footer-column" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white"> <option value="institutional">Institucional</option> <option value="useful">Links úteis</option> </select> </div> <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">\nAdicionar à lista\n</button> </form> </div> <div class="min-w-0"> <h3 class="text-sm font-semibold text-neutral-800 mb-3">Itens (arrastar para ordenar)</h3> <div id="footer-sortable-list" class="flex flex-col gap-3 min-h-[3rem]"></div> <p id="footer-empty" class="text-sm text-neutral-500 italic py-6 hidden">\nNenhum item. Usa o formulário ao lado para adicionar.\n</p> </div> </div> </div> </div>  <script>(function(){', `
+		import Sortable from 'sortablejs';
+		import { actions } from 'astro:actions';
+
+		const GRIP_SVG = \`
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-neutral-400" aria-hidden="true">
+				<circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+			</svg>
+		\`;
+
+		function ensureId(row) {
+			return typeof row.id === 'string' && row.id.trim() ? row.id.trim() : crypto.randomUUID();
+		}
+
+		let mainItems = structuredClone(initialMain).map((row) => ({
+			id: ensureId(row),
+			label: row.label ?? '',
+			url: row.url ?? '',
+			order: typeof row.order === 'number' ? row.order : 0,
+		}));
+
+		let footerItems = structuredClone(initialFooter).map((row) => ({
+			id: ensureId(row),
+			label: row.label ?? '',
+			url: row.url ?? '',
+			order: typeof row.order === 'number' ? row.order : 0,
+			column: row.column === 'useful' ? 'useful' : 'institutional',
+		}));
+
+		let activeTab = 'main';
+		/** @type {Sortable | null} */
+		let sortableMain = null;
+		/** @type {Sortable | null} */
+		let sortableFooter = null;
+
+		const tabMain = document.getElementById('tab-main');
+		const tabFooter = document.getElementById('tab-footer');
+		const panelMain = document.getElementById('panel-main');
+		const panelFooter = document.getElementById('panel-footer');
+		const mainList = document.getElementById('main-sortable-list');
+		const footerList = document.getElementById('footer-sortable-list');
+		const mainEmpty = document.getElementById('main-empty');
+		const footerEmpty = document.getElementById('footer-empty');
+		const saveStatus = document.getElementById('save-status');
+
+		function sortPairs(items) {
+			return items
+				.map((it, idx) => ({ it, idx }))
+				.sort((a, b) => a.it.order - b.it.order || a.it.label.localeCompare(b.it.label, 'pt', { sensitivity: 'base' }));
+		}
+
+		function applyDomOrderToItems(container, itemsRef) {
+			if (!container) return;
+			const ids = [...container.querySelectorAll('[data-menu-item-id]')].map((el) =>
+				el.getAttribute('data-menu-item-id'),
+			);
+			const map = new Map(itemsRef.map((x) => [x.id, x]));
+			const ordered = ids.map((id) => map.get(id)).filter(Boolean);
+			itemsRef.length = 0;
+			ordered.forEach((it, i) => {
+				it.order = i;
+				itemsRef.push(it);
+			});
+		}
+
+		function nextOrder(items) {
+			if (!items.length) return 0;
+			return Math.max(...items.map((x) => x.order)) + 1;
+		}
+
+		function attachSortable(container, itemsRef, assign) {
+			if (!container || container.children.length === 0) return;
+			assign(
+				Sortable.create(container, {
+					handle: '.menu-drag-handle',
+					animation: 180,
+					ghostClass: 'menu-sortable-ghost',
+					dragClass: 'menu-sortable-drag',
+					forceFallback: false,
+					onEnd: () => applyDomOrderToItems(container, itemsRef),
+				}),
+			);
+		}
+
+		function renderMain() {
+			sortableMain?.destroy();
+			sortableMain = null;
+			if (!mainList) return;
+			mainList.replaceChildren();
+			const pairs = sortPairs(mainItems);
+			if (pairs.length === 0) {
+				mainEmpty?.classList.remove('hidden');
+			} else {
+				mainEmpty?.classList.add('hidden');
+			}
+
+			for (const { it } of pairs) {
+				const card = document.createElement('div');
+				card.dataset.menuItemId = it.id;
+				card.className =
+					'flex flex-row items-stretch gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition-shadow';
+
+				card.innerHTML = \`
+					<button type="button" class="menu-drag-handle flex shrink-0 cursor-grab touch-none items-center justify-center rounded-lg border border-transparent px-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:cursor-grabbing" aria-label="Arrastar para reordenar">
+						\${GRIP_SVG}
+					</button>
+					<div class="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">Label</label>
+							<input type="text" maxlength="120" class="menu-in-label w-full rounded border border-neutral-200 px-2 py-1.5 text-sm" />
+						</div>
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">URL</label>
+							<input type="text" maxlength="512" class="menu-in-url w-full rounded border border-neutral-200 px-2 py-1.5 font-mono text-sm" />
+						</div>
+					</div>
+					<button type="button" class="menu-btn-remove shrink-0 self-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Remover</button>
+				\`;
+
+				const lbl = card.querySelector('.menu-in-label');
+				const url = card.querySelector('.menu-in-url');
+				const rm = card.querySelector('.menu-btn-remove');
+
+				if (lbl instanceof HTMLInputElement) {
+					lbl.value = it.label;
+					lbl.addEventListener('input', () => {
+						const row = mainItems.find((x) => x.id === it.id);
+						if (row) row.label = lbl.value;
+					});
+				}
+				if (url instanceof HTMLInputElement) {
+					url.value = it.url;
+					url.addEventListener('input', () => {
+						const row = mainItems.find((x) => x.id === it.id);
+						if (row) row.url = url.value;
+					});
+				}
+				rm?.addEventListener('click', () => {
+					const ix = mainItems.findIndex((x) => x.id === it.id);
+					if (ix !== -1) mainItems.splice(ix, 1);
+					mainItems.forEach((row, i) => {
+						row.order = i;
+					});
+					renderMain();
+				});
+
+				mainList.appendChild(card);
+			}
+
+			attachSortable(mainList, mainItems, (s) => {
+				sortableMain = s;
+			});
+		}
+
+		function renderFooter() {
+			sortableFooter?.destroy();
+			sortableFooter = null;
+			if (!footerList) return;
+			footerList.replaceChildren();
+			const pairs = sortPairs(footerItems);
+			if (pairs.length === 0) {
+				footerEmpty?.classList.remove('hidden');
+			} else {
+				footerEmpty?.classList.add('hidden');
+			}
+
+			for (const { it } of pairs) {
+				const card = document.createElement('div');
+				card.dataset.menuItemId = it.id;
+				card.className =
+					'flex flex-row items-stretch gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition-shadow';
+
+				card.innerHTML = \`
+					<button type="button" class="menu-drag-handle flex shrink-0 cursor-grab touch-none items-center justify-center rounded-lg border border-transparent px-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:cursor-grabbing" aria-label="Arrastar para reordenar">
+						\${GRIP_SVG}
+					</button>
+					<div class="grid min-w-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-3">
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">Label</label>
+							<input type="text" maxlength="120" class="menu-in-label w-full rounded border border-neutral-200 px-2 py-1.5 text-sm" />
+						</div>
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">URL</label>
+							<input type="text" maxlength="512" class="menu-in-url w-full rounded border border-neutral-200 px-2 py-1.5 font-mono text-sm" />
+						</div>
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">Coluna</label>
+							<select class="menu-in-col w-full rounded border border-neutral-200 px-2 py-1.5 text-sm bg-white" aria-label="Coluna no rodapé">
+								<option value="institutional">Institucional</option>
+								<option value="useful">Links úteis</option>
+							</select>
+						</div>
+					</div>
+					<button type="button" class="menu-btn-remove shrink-0 self-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Remover</button>
+				\`;
+
+				const lbl = card.querySelector('.menu-in-label');
+				const url = card.querySelector('.menu-in-url');
+				const col = card.querySelector('.menu-in-col');
+				const rm = card.querySelector('.menu-btn-remove');
+
+				if (lbl instanceof HTMLInputElement) {
+					lbl.value = it.label;
+					lbl.addEventListener('input', () => {
+						const row = footerItems.find((x) => x.id === it.id);
+						if (row) row.label = lbl.value;
+					});
+				}
+				if (url instanceof HTMLInputElement) {
+					url.value = it.url;
+					url.addEventListener('input', () => {
+						const row = footerItems.find((x) => x.id === it.id);
+						if (row) row.url = url.value;
+					});
+				}
+				if (col instanceof HTMLSelectElement) {
+					col.value = it.column === 'useful' ? 'useful' : 'institutional';
+					col.addEventListener('change', () => {
+						const row = footerItems.find((x) => x.id === it.id);
+						if (row) row.column = col.value === 'useful' ? 'useful' : 'institutional';
+					});
+				}
+				rm?.addEventListener('click', () => {
+					const ix = footerItems.findIndex((x) => x.id === it.id);
+					if (ix !== -1) footerItems.splice(ix, 1);
+					footerItems.forEach((row, i) => {
+						row.order = i;
+					});
+					renderFooter();
+				});
+
+				footerList.appendChild(card);
+			}
+
+			attachSortable(footerList, footerItems, (s) => {
+				sortableFooter = s;
+			});
+		}
+
+		function setTab(which) {
+			activeTab = which;
+			const isMain = which === 'main';
+			if (panelMain) panelMain.hidden = !isMain;
+			if (panelFooter) panelFooter.hidden = isMain;
+
+			const activeTabCls =
+				'rounded-t-lg border border-b-0 border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-[inset_0_-1px_0_0_white] relative z-[1]';
+			const idleTabCls =
+				'rounded-t-lg border border-transparent border-b-neutral-200 bg-neutral-200/80 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-200';
+
+			if (tabMain) {
+				tabMain.setAttribute('aria-selected', String(isMain));
+				tabMain.className = isMain ? activeTabCls : idleTabCls;
+			}
+			if (tabFooter) {
+				tabFooter.setAttribute('aria-selected', String(!isMain));
+				tabFooter.className = !isMain ? activeTabCls : idleTabCls;
+			}
+
+			if (isMain) renderMain();
+			else renderFooter();
+		}
+
+		tabMain?.addEventListener('click', () => setTab('main'));
+		tabFooter?.addEventListener('click', () => setTab('footer'));
+
+		document.getElementById('form-add-main')?.addEventListener('submit', (e) => {
+			e.preventDefault();
+			const lab = document.getElementById('add-main-label');
+			const u = document.getElementById('add-main-url');
+			if (!(lab instanceof HTMLInputElement) || !(u instanceof HTMLInputElement)) return;
+			const label = lab.value.trim();
+			const url = u.value.trim();
+			if (!label || !url) return;
+			mainItems.push({ id: crypto.randomUUID(), label, url, order: nextOrder(mainItems) });
+			lab.value = '';
+			u.value = '';
+			renderMain();
+		});
+
+		document.getElementById('form-add-footer')?.addEventListener('submit', (e) => {
+			e.preventDefault();
+			const lab = document.getElementById('add-footer-label');
+			const u = document.getElementById('add-footer-url');
+			const colSel = document.getElementById('add-footer-column');
+			if (!(lab instanceof HTMLInputElement) || !(u instanceof HTMLInputElement)) return;
+			const column =
+				colSel instanceof HTMLSelectElement && colSel.value === 'useful' ? 'useful' : 'institutional';
+			const label = lab.value.trim();
+			const url = u.value.trim();
+			if (!label || !url) return;
+			footerItems.push({
+				id: crypto.randomUUID(),
+				label,
+				url,
+				order: nextOrder(footerItems),
+				column,
+			});
+			lab.value = '';
+			u.value = '';
+			renderFooter();
+		});
+
+		async function saveItems(menu, items, statusEl) {
+			if (statusEl) statusEl.textContent = '';
+
+			if (menu === 'main' && mainList) applyDomOrderToItems(mainList, mainItems);
+			if (menu === 'footer' && footerList) applyDomOrderToItems(footerList, footerItems);
+
+			const clean = items.map((x) => {
+				const idStr = typeof x.id === 'string' ? x.id.trim() : '';
+				const row = {
+					id: idStr || crypto.randomUUID(),
+					label: x.label.trim(),
+					url: x.url.trim(),
+					order: typeof x.order === 'number' && Number.isFinite(x.order) ? Math.trunc(x.order) : 0,
+				};
+				if (menu === 'footer') {
+					row.column = x.column === 'useful' ? 'useful' : 'institutional';
+				}
+				return row;
+			});
+
+			for (let i = 0; i < clean.length; i++) {
+				const row = clean[i];
+				if (!row.id) {
+					if (statusEl) statusEl.textContent = \`Id em falta na linha \${i + 1}.\`;
+					return false;
+				}
+				if (!row.label) {
+					if (statusEl) statusEl.textContent = \`Label em falta no item \${i + 1}.\`;
+					return false;
+				}
+				if (!row.url) {
+					if (statusEl) statusEl.textContent = \`URL em falta no item \${i + 1}.\`;
+					return false;
+				}
+			}
+
+			try {
+				const { error } = await actions.saveMenu({ menu, items: clean });
+				if (error) {
+					if (statusEl) statusEl.textContent = error.message;
+					return false;
+				}
+				if (statusEl) {
+					statusEl.textContent = menu === 'main' ? 'Menu Principal guardado.' : 'Menu de Rodapé guardado.';
+				}
+				return true;
+			} catch (err) {
+				if (statusEl) statusEl.textContent = err instanceof Error ? err.message : 'Erro ao guardar.';
+				return false;
+			}
+		}
+
+		document.getElementById('btn-save-menu')?.addEventListener('click', () => {
+			if (activeTab === 'main') {
+				saveItems('main', mainItems, saveStatus);
+			} else {
+				saveItems('footer', footerItems, saveStatus);
+			}
+		});
+
+		setTab('main');
+	})();<\/script> `], [" ", '<div class="space-y-6"> <p class="text-sm text-neutral-600">\nFicheiros:', ' <code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200">menu-main.json</code> ·', ' <code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200">menu-footer.json</code>. Arrasta pela alça para ordenar.\n</p> <div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 mb-6"> <div class="flex gap-0 border-b border-transparent" role="tablist" aria-label="Menu a editar"> <button type="button" id="tab-main" role="tab" aria-selected="true" aria-controls="panel-main" class="rounded-t-lg border border-b-0 border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-[inset_0_-1px_0_0_white] relative z-[1]">\nMenu Principal\n</button> <button type="button" id="tab-footer" role="tab" aria-selected="false" aria-controls="panel-footer" class="rounded-t-lg border border-transparent border-b-neutral-200 bg-neutral-200/80 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-200">\nMenu de Rodapé\n</button> </div> <button type="button" id="btn-save-menu" class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600">\nSalvar Menu\n</button> </div> <p id="save-status" class="text-sm text-neutral-600 mb-6 min-h-[1.25rem]" role="status" aria-live="polite"></p> <!-- Painel: Menu Principal --> <div id="panel-main" role="tabpanel" aria-labelledby="tab-main" class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"> <div class="lg:grid lg:grid-cols-[minmax(260px,300px)_1fr] lg:gap-8 lg:items-start"> <div class="mb-8 lg:mb-0 lg:sticky lg:top-24 space-y-4"> <h2 class="text-lg font-semibold text-neutral-900">Menu Principal</h2> <form id="form-add-main" class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3"> <p class="text-sm font-medium text-neutral-800">Adicionar link</p> <div> <label for="add-main-label" class="block text-xs font-semibold text-neutral-700 mb-1">Label</label> <input id="add-main-label" type="text" maxlength="120" required autocomplete="off" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white" placeholder="Ex.: Blog"> </div> <div> <label for="add-main-url" class="block text-xs font-semibold text-neutral-700 mb-1">URL</label> <input id="add-main-url" type="text" maxlength="512" required autocomplete="off" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm font-mono bg-white" placeholder="/blog"> </div> <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">\nAdicionar à lista\n</button> </form> </div> <div class="min-w-0"> <h3 class="text-sm font-semibold text-neutral-800 mb-3">Itens (arrastar para ordenar)</h3> <div id="main-sortable-list" class="flex flex-col gap-3 min-h-[3rem]"></div> <p id="main-empty" class="text-sm text-neutral-500 italic py-6 hidden">\nNenhum item. Usa o formulário ao lado para adicionar.\n</p> </div> </div> </div> <!-- Painel: Menu de Rodapé --> <div id="panel-footer" role="tabpanel" aria-labelledby="tab-footer" hidden class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm mt-6"> <div class="lg:grid lg:grid-cols-[minmax(260px,300px)_1fr] lg:gap-8 lg:items-start"> <div class="mb-8 lg:mb-0 lg:sticky lg:top-24 space-y-4"> <h2 class="text-lg font-semibold text-neutral-900">Menu de Rodapé</h2> <form id="form-add-footer" class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3"> <p class="text-sm font-medium text-neutral-800">Adicionar link</p> <div> <label for="add-footer-label" class="block text-xs font-semibold text-neutral-700 mb-1">Label</label> <input id="add-footer-label" type="text" maxlength="120" required autocomplete="off" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white" placeholder="Ex.: Contactos"> </div> <div> <label for="add-footer-url" class="block text-xs font-semibold text-neutral-700 mb-1">URL</label> <input id="add-footer-url" type="text" maxlength="512" required autocomplete="off" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm font-mono bg-white" placeholder="/contactos"> </div> <div> <label for="add-footer-column" class="block text-xs font-semibold text-neutral-700 mb-1">Coluna</label> <select id="add-footer-column" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white"> <option value="institutional">Institucional</option> <option value="useful">Links úteis</option> </select> </div> <button type="submit" class="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">\nAdicionar à lista\n</button> </form> </div> <div class="min-w-0"> <h3 class="text-sm font-semibold text-neutral-800 mb-3">Itens (arrastar para ordenar)</h3> <div id="footer-sortable-list" class="flex flex-col gap-3 min-h-[3rem]"></div> <p id="footer-empty" class="text-sm text-neutral-500 italic py-6 hidden">\nNenhum item. Usa o formulário ao lado para adicionar.\n</p> </div> </div> </div> </div>  <script>(function(){', `
+		import Sortable from 'sortablejs';
+		import { actions } from 'astro:actions';
+
+		const GRIP_SVG = \\\`
+			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-neutral-400" aria-hidden="true">
+				<circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/>
+			</svg>
+		\\\`;
+
+		function ensureId(row) {
+			return typeof row.id === 'string' && row.id.trim() ? row.id.trim() : crypto.randomUUID();
+		}
+
+		let mainItems = structuredClone(initialMain).map((row) => ({
+			id: ensureId(row),
+			label: row.label ?? '',
+			url: row.url ?? '',
+			order: typeof row.order === 'number' ? row.order : 0,
+		}));
+
+		let footerItems = structuredClone(initialFooter).map((row) => ({
+			id: ensureId(row),
+			label: row.label ?? '',
+			url: row.url ?? '',
+			order: typeof row.order === 'number' ? row.order : 0,
+			column: row.column === 'useful' ? 'useful' : 'institutional',
+		}));
+
+		let activeTab = 'main';
+		/** @type {Sortable | null} */
+		let sortableMain = null;
+		/** @type {Sortable | null} */
+		let sortableFooter = null;
+
+		const tabMain = document.getElementById('tab-main');
+		const tabFooter = document.getElementById('tab-footer');
+		const panelMain = document.getElementById('panel-main');
+		const panelFooter = document.getElementById('panel-footer');
+		const mainList = document.getElementById('main-sortable-list');
+		const footerList = document.getElementById('footer-sortable-list');
+		const mainEmpty = document.getElementById('main-empty');
+		const footerEmpty = document.getElementById('footer-empty');
+		const saveStatus = document.getElementById('save-status');
+
+		function sortPairs(items) {
+			return items
+				.map((it, idx) => ({ it, idx }))
+				.sort((a, b) => a.it.order - b.it.order || a.it.label.localeCompare(b.it.label, 'pt', { sensitivity: 'base' }));
+		}
+
+		function applyDomOrderToItems(container, itemsRef) {
+			if (!container) return;
+			const ids = [...container.querySelectorAll('[data-menu-item-id]')].map((el) =>
+				el.getAttribute('data-menu-item-id'),
+			);
+			const map = new Map(itemsRef.map((x) => [x.id, x]));
+			const ordered = ids.map((id) => map.get(id)).filter(Boolean);
+			itemsRef.length = 0;
+			ordered.forEach((it, i) => {
+				it.order = i;
+				itemsRef.push(it);
+			});
+		}
+
+		function nextOrder(items) {
+			if (!items.length) return 0;
+			return Math.max(...items.map((x) => x.order)) + 1;
+		}
+
+		function attachSortable(container, itemsRef, assign) {
+			if (!container || container.children.length === 0) return;
+			assign(
+				Sortable.create(container, {
+					handle: '.menu-drag-handle',
+					animation: 180,
+					ghostClass: 'menu-sortable-ghost',
+					dragClass: 'menu-sortable-drag',
+					forceFallback: false,
+					onEnd: () => applyDomOrderToItems(container, itemsRef),
+				}),
+			);
+		}
+
+		function renderMain() {
+			sortableMain?.destroy();
+			sortableMain = null;
+			if (!mainList) return;
+			mainList.replaceChildren();
+			const pairs = sortPairs(mainItems);
+			if (pairs.length === 0) {
+				mainEmpty?.classList.remove('hidden');
+			} else {
+				mainEmpty?.classList.add('hidden');
+			}
+
+			for (const { it } of pairs) {
+				const card = document.createElement('div');
+				card.dataset.menuItemId = it.id;
+				card.className =
+					'flex flex-row items-stretch gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition-shadow';
+
+				card.innerHTML = \\\`
+					<button type="button" class="menu-drag-handle flex shrink-0 cursor-grab touch-none items-center justify-center rounded-lg border border-transparent px-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:cursor-grabbing" aria-label="Arrastar para reordenar">
+						\\\${GRIP_SVG}
+					</button>
+					<div class="grid min-w-0 flex-1 grid-cols-1 gap-2 sm:grid-cols-2">
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">Label</label>
+							<input type="text" maxlength="120" class="menu-in-label w-full rounded border border-neutral-200 px-2 py-1.5 text-sm" />
+						</div>
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">URL</label>
+							<input type="text" maxlength="512" class="menu-in-url w-full rounded border border-neutral-200 px-2 py-1.5 font-mono text-sm" />
+						</div>
+					</div>
+					<button type="button" class="menu-btn-remove shrink-0 self-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Remover</button>
+				\\\`;
+
+				const lbl = card.querySelector('.menu-in-label');
+				const url = card.querySelector('.menu-in-url');
+				const rm = card.querySelector('.menu-btn-remove');
+
+				if (lbl instanceof HTMLInputElement) {
+					lbl.value = it.label;
+					lbl.addEventListener('input', () => {
+						const row = mainItems.find((x) => x.id === it.id);
+						if (row) row.label = lbl.value;
+					});
+				}
+				if (url instanceof HTMLInputElement) {
+					url.value = it.url;
+					url.addEventListener('input', () => {
+						const row = mainItems.find((x) => x.id === it.id);
+						if (row) row.url = url.value;
+					});
+				}
+				rm?.addEventListener('click', () => {
+					const ix = mainItems.findIndex((x) => x.id === it.id);
+					if (ix !== -1) mainItems.splice(ix, 1);
+					mainItems.forEach((row, i) => {
+						row.order = i;
+					});
+					renderMain();
+				});
+
+				mainList.appendChild(card);
+			}
+
+			attachSortable(mainList, mainItems, (s) => {
+				sortableMain = s;
+			});
+		}
+
+		function renderFooter() {
+			sortableFooter?.destroy();
+			sortableFooter = null;
+			if (!footerList) return;
+			footerList.replaceChildren();
+			const pairs = sortPairs(footerItems);
+			if (pairs.length === 0) {
+				footerEmpty?.classList.remove('hidden');
+			} else {
+				footerEmpty?.classList.add('hidden');
+			}
+
+			for (const { it } of pairs) {
+				const card = document.createElement('div');
+				card.dataset.menuItemId = it.id;
+				card.className =
+					'flex flex-row items-stretch gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition-shadow';
+
+				card.innerHTML = \\\`
+					<button type="button" class="menu-drag-handle flex shrink-0 cursor-grab touch-none items-center justify-center rounded-lg border border-transparent px-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:cursor-grabbing" aria-label="Arrastar para reordenar">
+						\\\${GRIP_SVG}
+					</button>
+					<div class="grid min-w-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-3">
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">Label</label>
+							<input type="text" maxlength="120" class="menu-in-label w-full rounded border border-neutral-200 px-2 py-1.5 text-sm" />
+						</div>
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">URL</label>
+							<input type="text" maxlength="512" class="menu-in-url w-full rounded border border-neutral-200 px-2 py-1.5 font-mono text-sm" />
+						</div>
+						<div>
+							<label class="mb-0.5 block text-xs font-medium text-neutral-600">Coluna</label>
+							<select class="menu-in-col w-full rounded border border-neutral-200 px-2 py-1.5 text-sm bg-white" aria-label="Coluna no rodapé">
+								<option value="institutional">Institucional</option>
+								<option value="useful">Links úteis</option>
+							</select>
+						</div>
+					</div>
+					<button type="button" class="menu-btn-remove shrink-0 self-center rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Remover</button>
+				\\\`;
+
+				const lbl = card.querySelector('.menu-in-label');
+				const url = card.querySelector('.menu-in-url');
+				const col = card.querySelector('.menu-in-col');
+				const rm = card.querySelector('.menu-btn-remove');
+
+				if (lbl instanceof HTMLInputElement) {
+					lbl.value = it.label;
+					lbl.addEventListener('input', () => {
+						const row = footerItems.find((x) => x.id === it.id);
+						if (row) row.label = lbl.value;
+					});
+				}
+				if (url instanceof HTMLInputElement) {
+					url.value = it.url;
+					url.addEventListener('input', () => {
+						const row = footerItems.find((x) => x.id === it.id);
+						if (row) row.url = url.value;
+					});
+				}
+				if (col instanceof HTMLSelectElement) {
+					col.value = it.column === 'useful' ? 'useful' : 'institutional';
+					col.addEventListener('change', () => {
+						const row = footerItems.find((x) => x.id === it.id);
+						if (row) row.column = col.value === 'useful' ? 'useful' : 'institutional';
+					});
+				}
+				rm?.addEventListener('click', () => {
+					const ix = footerItems.findIndex((x) => x.id === it.id);
+					if (ix !== -1) footerItems.splice(ix, 1);
+					footerItems.forEach((row, i) => {
+						row.order = i;
+					});
+					renderFooter();
+				});
+
+				footerList.appendChild(card);
+			}
+
+			attachSortable(footerList, footerItems, (s) => {
+				sortableFooter = s;
+			});
+		}
+
+		function setTab(which) {
+			activeTab = which;
+			const isMain = which === 'main';
+			if (panelMain) panelMain.hidden = !isMain;
+			if (panelFooter) panelFooter.hidden = isMain;
+
+			const activeTabCls =
+				'rounded-t-lg border border-b-0 border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-[inset_0_-1px_0_0_white] relative z-[1]';
+			const idleTabCls =
+				'rounded-t-lg border border-transparent border-b-neutral-200 bg-neutral-200/80 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-200';
+
+			if (tabMain) {
+				tabMain.setAttribute('aria-selected', String(isMain));
+				tabMain.className = isMain ? activeTabCls : idleTabCls;
+			}
+			if (tabFooter) {
+				tabFooter.setAttribute('aria-selected', String(!isMain));
+				tabFooter.className = !isMain ? activeTabCls : idleTabCls;
+			}
+
+			if (isMain) renderMain();
+			else renderFooter();
+		}
+
+		tabMain?.addEventListener('click', () => setTab('main'));
+		tabFooter?.addEventListener('click', () => setTab('footer'));
+
+		document.getElementById('form-add-main')?.addEventListener('submit', (e) => {
+			e.preventDefault();
+			const lab = document.getElementById('add-main-label');
+			const u = document.getElementById('add-main-url');
+			if (!(lab instanceof HTMLInputElement) || !(u instanceof HTMLInputElement)) return;
+			const label = lab.value.trim();
+			const url = u.value.trim();
+			if (!label || !url) return;
+			mainItems.push({ id: crypto.randomUUID(), label, url, order: nextOrder(mainItems) });
+			lab.value = '';
+			u.value = '';
+			renderMain();
+		});
+
+		document.getElementById('form-add-footer')?.addEventListener('submit', (e) => {
+			e.preventDefault();
+			const lab = document.getElementById('add-footer-label');
+			const u = document.getElementById('add-footer-url');
+			const colSel = document.getElementById('add-footer-column');
+			if (!(lab instanceof HTMLInputElement) || !(u instanceof HTMLInputElement)) return;
+			const column =
+				colSel instanceof HTMLSelectElement && colSel.value === 'useful' ? 'useful' : 'institutional';
+			const label = lab.value.trim();
+			const url = u.value.trim();
+			if (!label || !url) return;
+			footerItems.push({
+				id: crypto.randomUUID(),
+				label,
+				url,
+				order: nextOrder(footerItems),
+				column,
+			});
+			lab.value = '';
+			u.value = '';
+			renderFooter();
+		});
+
+		async function saveItems(menu, items, statusEl) {
+			if (statusEl) statusEl.textContent = '';
+
+			if (menu === 'main' && mainList) applyDomOrderToItems(mainList, mainItems);
+			if (menu === 'footer' && footerList) applyDomOrderToItems(footerList, footerItems);
+
+			const clean = items.map((x) => {
+				const idStr = typeof x.id === 'string' ? x.id.trim() : '';
+				const row = {
+					id: idStr || crypto.randomUUID(),
+					label: x.label.trim(),
+					url: x.url.trim(),
+					order: typeof x.order === 'number' && Number.isFinite(x.order) ? Math.trunc(x.order) : 0,
+				};
+				if (menu === 'footer') {
+					row.column = x.column === 'useful' ? 'useful' : 'institutional';
+				}
+				return row;
+			});
+
+			for (let i = 0; i < clean.length; i++) {
+				const row = clean[i];
+				if (!row.id) {
+					if (statusEl) statusEl.textContent = \\\`Id em falta na linha \\\${i + 1}.\\\`;
+					return false;
+				}
+				if (!row.label) {
+					if (statusEl) statusEl.textContent = \\\`Label em falta no item \\\${i + 1}.\\\`;
+					return false;
+				}
+				if (!row.url) {
+					if (statusEl) statusEl.textContent = \\\`URL em falta no item \\\${i + 1}.\\\`;
+					return false;
+				}
+			}
+
+			try {
+				const { error } = await actions.saveMenu({ menu, items: clean });
+				if (error) {
+					if (statusEl) statusEl.textContent = error.message;
+					return false;
+				}
+				if (statusEl) {
+					statusEl.textContent = menu === 'main' ? 'Menu Principal guardado.' : 'Menu de Rodapé guardado.';
+				}
+				return true;
+			} catch (err) {
+				if (statusEl) statusEl.textContent = err instanceof Error ? err.message : 'Erro ao guardar.';
+				return false;
+			}
+		}
+
+		document.getElementById('btn-save-menu')?.addEventListener('click', () => {
+			if (activeTab === 'main') {
+				saveItems('main', mainItems, saveStatus);
+			} else {
+				saveItems('footer', footerItems, saveStatus);
+			}
+		});
+
+		setTab('main');
+	})();<\/script> `])), maybeRenderHead(), " ", " ", defineScriptVars({ initialMain: mainMenu, initialFooter: footerMenu })) })}`;
+}, "C:/blogonauta/src/pages/admin/menus.astro", void 0);
+
+const $$file = "C:/blogonauta/src/pages/admin/menus.astro";
+const $$url = "/admin/menus";
+
+const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+	__proto__: null,
+	default: $$Menus,
+	file: $$file,
+	prerender,
+	url: $$url
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const page = () => _page;
+
+export { page };

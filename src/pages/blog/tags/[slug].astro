@@ -1,0 +1,146 @@
+---
+/**
+ * Arquivo público por tag — URL `/blog/tags/[slug]`.
+ */
+export const prerender = true;
+
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import BaseHead from '../../../components/BaseHead.astro';
+import Footer from '../../../components/Footer.astro';
+import FormattedDate from '../../../components/FormattedDate.astro';
+import Header from '../../../components/Header.astro';
+import { SITE_TITLE } from '../../../consts';
+import { readTags } from '../../../lib/taxonomy-data';
+
+export async function getStaticPaths() {
+	const tags = await readTags();
+	return tags.map((tag) => ({
+		params: { slug: tag.slug },
+	}));
+}
+
+const { slug } = Astro.params;
+const tags = await readTags();
+const tag = tags.find((t) => t.slug === slug);
+
+if (!tag) {
+	return Astro.redirect('/blog/', 302);
+}
+
+const description = `Artigos com a tag «${tag.name}». Explore conteúdos em ${SITE_TITLE}.`;
+
+const posts = (await getCollection('blog'))
+	.filter((p) => !p.data.draft && (p.data.tags ?? []).includes(tag.name))
+	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<!doctype html>
+<html lang="pt-br">
+	<head>
+		<BaseHead title={`Tag: ${tag.name}`} seoTitle={`Tag: ${tag.name}`} description={description} />
+		<style>
+			main {
+				width: 960px;
+			}
+			ul {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 2rem;
+				list-style-type: none;
+				margin: 0;
+				padding: 0;
+			}
+			ul li {
+				width: calc(50% - 1rem);
+			}
+			ul li * {
+				text-decoration: none;
+				transition: 0.2s ease;
+			}
+			ul li img {
+				margin-bottom: 0.5rem;
+				border-radius: 12px;
+			}
+			ul li a {
+				display: block;
+			}
+			.title {
+				margin: 0;
+				color: rgb(var(--black));
+				line-height: 1.2;
+			}
+			.date {
+				margin: 0;
+				color: rgb(var(--gray));
+			}
+			ul li a:hover h4,
+			ul li a:hover .date {
+				color: rgb(var(--accent));
+			}
+			ul a:hover img {
+				box-shadow: var(--box-shadow);
+			}
+			@media (max-width: 720px) {
+				ul {
+					gap: 0.5em;
+				}
+				ul li {
+					width: 100%;
+					text-align: center;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<header class="mb-8">
+				<p class="text-sm text-neutral-500 mb-1">
+					<a href="/blog/" class="underline hover:text-neutral-800">Blog</a>
+					<span aria-hidden="true"> · </span>
+					Tag
+				</p>
+				<h1 class="text-3xl font-bold text-neutral-900">#{tag.name}</h1>
+				<p class="text-neutral-600 mt-2 max-w-2xl">{description}</p>
+			</header>
+
+			{
+				posts.length === 0 ? (
+					<p class="text-neutral-600 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-10 text-center">
+						Ainda não há artigos com esta tag.
+					</p>
+				) : (
+					<section aria-labelledby="tag-posts-heading">
+						<h2 id="tag-posts-heading" class="sr-only">
+							Artigos com a tag {tag.name}
+						</h2>
+						<ul>
+							{posts.map((post) => (
+								<li>
+									<a href={`/blog/${post.id}/`}>
+										{post.data.heroImage && (
+											<Image
+												width={720}
+												height={360}
+												src={post.data.heroImage}
+												alt={post.data.title}
+												format="webp"
+												quality="mid"
+											/>
+										)}
+										<h4 class="title">{post.data.title}</h4>
+										<p class="date">
+											<FormattedDate date={post.data.pubDate} />
+										</p>
+									</a>
+								</li>
+							))}
+						</ul>
+					</section>
+				)
+			}
+		</main>
+		<Footer />
+	</body>
+</html>
