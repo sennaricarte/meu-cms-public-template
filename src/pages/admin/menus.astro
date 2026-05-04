@@ -1,20 +1,45 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
 import { readFooterMenu, readMainMenu } from '../../lib/menu-data';
+import { listPagesForDashboard } from '../../lib/pages-admin-list';
 
 export const prerender = false;
 
 const mainMenu = await readMainMenu();
 const footerMenu = await readFooterMenu();
+const availablePages = (await listPagesForDashboard()).map((p) => {
+	const slugBase = p.relativePath.replace(/\.(md|mdx)$/i, '');
+	return {
+		label: p.draft ? `${p.title} (rascunho)` : p.title,
+		url: `/${slugBase}`,
+	};
+});
+const socialPlatforms = [
+	{ id: 'instagram', label: 'Instagram', baseUrl: 'https://instagram.com/' },
+	{ id: 'facebook', label: 'Facebook', baseUrl: 'https://facebook.com/' },
+	{ id: 'youtube', label: 'YouTube', baseUrl: 'https://youtube.com/@' },
+	{ id: 'linkedin', label: 'LinkedIn', baseUrl: 'https://linkedin.com/in/' },
+	{ id: 'x', label: 'X (Twitter)', baseUrl: 'https://x.com/' },
+	{ id: 'tiktok', label: 'TikTok', baseUrl: 'https://www.tiktok.com/@' },
+	{ id: 'github', label: 'GitHub', baseUrl: 'https://github.com/' },
+];
 ---
 
-<DashboardLayout title="Menus — Admin" heading="Menus">
+<DashboardLayout
+	title="Menus — Admin"
+	heading="Menus"
+	sectionTitle="Navegação"
+	sectionActionLabel="Adicionar Novo"
+	sectionActionHref="#form-add-main"
+>
 	<div class="space-y-6">
-		<p class="text-sm text-neutral-600">
-			Ficheiros:{' '}
-			<code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200">menu-main.json</code> ·{' '}
-			<code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200">menu-footer.json</code>. Arrasta pela alça para ordenar.
-		</p>
+		<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+			<p class="text-sm text-slate-600">
+				Ficheiros:{' '}
+				<code class="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-800">menu-main.json</code> ·{' '}
+				<code class="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-800">menu-footer.json</code>. Arrasta pela alça para ordenar.
+			</p>
+		</div>
 			<div class="flex flex-col sm:flex-row sm:flex-wrap sm:items-center sm:justify-between gap-3 mb-6">
 				<div class="flex gap-0 border-b border-transparent" role="tablist" aria-label="Menu a editar">
 					<button
@@ -23,7 +48,7 @@ const footerMenu = await readFooterMenu();
 						role="tab"
 						aria-selected="true"
 						aria-controls="panel-main"
-						class="rounded-t-lg border border-b-0 border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-[inset_0_-1px_0_0_white] relative z-[1]"
+						class="relative z-[1] rounded-t-xl border border-b-0 border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-[inset_0_-1px_0_0_white]"
 					>
 						Menu Principal
 					</button>
@@ -33,18 +58,26 @@ const footerMenu = await readFooterMenu();
 						role="tab"
 						aria-selected="false"
 						aria-controls="panel-footer"
-						class="rounded-t-lg border border-transparent border-b-neutral-200 bg-neutral-200/80 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-200"
+						class="relative z-[1] rounded-t-xl border border-transparent border-b-slate-200 bg-slate-100 px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-200/80 hover:text-slate-900"
 					>
 						Menu de Rodapé
 					</button>
 				</div>
-				<button
-					type="button"
-					id="btn-save-menu"
-					class="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
-				>
-					Salvar Menu
-				</button>
+				<div class="flex flex-wrap items-center gap-2">
+					<a
+						href="#footer"
+						class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
+					>
+						Criar menu de rodapé
+					</a>
+					<button
+						type="button"
+						id="btn-save-menu"
+						class="rounded-xl bg-[#6D28D9] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
+					>
+						Salvar Menu
+					</button>
+				</div>
 			</div>
 
 			<p id="save-status" class="text-sm text-neutral-600 mb-6 min-h-[1.25rem]" role="status" aria-live="polite"></p>
@@ -54,13 +87,64 @@ const footerMenu = await readFooterMenu();
 				id="panel-main"
 				role="tabpanel"
 				aria-labelledby="tab-main"
-				class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm"
+				class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
 			>
 				<div class="lg:grid lg:grid-cols-[minmax(260px,300px)_1fr] lg:gap-8 lg:items-start">
 					<div class="mb-8 lg:mb-0 lg:sticky lg:top-24 space-y-4">
 						<h2 class="text-lg font-semibold text-neutral-900">Menu Principal</h2>
-						<form id="form-add-main" class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3">
+						<form id="form-add-main" class="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
 							<p class="text-sm font-medium text-neutral-800">Adicionar link</p>
+							<div>
+								<label for="add-main-existing-page" class="block text-xs font-semibold text-neutral-700 mb-1">Usar página existente</label>
+								<select
+									id="add-main-existing-page"
+									class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white"
+								>
+									<option value="">Seleciona uma página…</option>
+									{
+										availablePages.map((page) => (
+											<option value={JSON.stringify(page)}>{page.label} ({page.url})</option>
+										))
+									}
+								</select>
+								<button
+									type="button"
+									id="btn-add-main-selected-page"
+									class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
+								>
+									Adicionar página selecionada
+								</button>
+							</div>
+							<div class="rounded-lg border border-slate-200 bg-white p-3">
+								<p class="mb-2 text-xs font-semibold text-neutral-700">Adicionar rede social</p>
+								<div class="space-y-2">
+									<select id="add-main-social-platform" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white">
+										<option value="">Seleciona a rede…</option>
+										{
+											socialPlatforms.map((social) => (
+												<option value={social.id} data-base-url={social.baseUrl} data-social-label={social.label}>
+													{social.label}
+												</option>
+											))
+										}
+									</select>
+									<input
+										id="add-main-social-handle"
+										type="text"
+										maxlength="180"
+										autocomplete="off"
+										class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white"
+										placeholder="utilizador ou URL completa"
+									/>
+									<button
+										type="button"
+										id="btn-add-main-social"
+										class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
+									>
+										Adicionar rede social
+									</button>
+								</div>
+							</div>
 							<div>
 								<label for="add-main-label" class="block text-xs font-semibold text-neutral-700 mb-1">Label</label>
 								<input
@@ -87,17 +171,17 @@ const footerMenu = await readFooterMenu();
 							</div>
 							<button
 								type="submit"
-								class="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+								class="w-full rounded-xl bg-[#6D28D9] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
 							>
 								Adicionar à lista
 							</button>
 						</form>
 					</div>
 					<div class="min-w-0">
-						<h3 class="text-sm font-semibold text-neutral-800 mb-3">Itens (arrastar para ordenar)</h3>
+						<h3 class="mb-3 text-sm font-semibold text-slate-800">Itens (arrastar para ordenar)</h3>
 						<div id="main-sortable-list" class="flex flex-col gap-3 min-h-[3rem]"></div>
 						<p id="main-empty" class="text-sm text-neutral-500 italic py-6 hidden">
-							Nenhum item. Usa o formulário ao lado para adicionar.
+							Nenhum item disponível no momento.
 						</p>
 					</div>
 				</div>
@@ -109,13 +193,64 @@ const footerMenu = await readFooterMenu();
 				role="tabpanel"
 				aria-labelledby="tab-footer"
 				hidden
-				class="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm mt-6"
+				class="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
 			>
 				<div class="lg:grid lg:grid-cols-[minmax(260px,300px)_1fr] lg:gap-8 lg:items-start">
 					<div class="mb-8 lg:mb-0 lg:sticky lg:top-24 space-y-4">
 						<h2 class="text-lg font-semibold text-neutral-900">Menu de Rodapé</h2>
-						<form id="form-add-footer" class="rounded-lg border border-neutral-200 bg-neutral-50 p-4 space-y-3">
+						<form id="form-add-footer" class="space-y-3 rounded-xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
 							<p class="text-sm font-medium text-neutral-800">Adicionar link</p>
+							<div>
+								<label for="add-footer-existing-page" class="block text-xs font-semibold text-neutral-700 mb-1">Usar página existente</label>
+								<select
+									id="add-footer-existing-page"
+									class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white"
+								>
+									<option value="">Seleciona uma página…</option>
+									{
+										availablePages.map((page) => (
+											<option value={JSON.stringify(page)}>{page.label} ({page.url})</option>
+										))
+									}
+								</select>
+								<button
+									type="button"
+									id="btn-add-footer-selected-page"
+									class="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
+								>
+									Adicionar página selecionada
+								</button>
+							</div>
+							<div class="rounded-lg border border-slate-200 bg-white p-3">
+								<p class="mb-2 text-xs font-semibold text-neutral-700">Adicionar rede social</p>
+								<div class="space-y-2">
+									<select id="add-footer-social-platform" class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white">
+										<option value="">Seleciona a rede…</option>
+										{
+											socialPlatforms.map((social) => (
+												<option value={social.id} data-base-url={social.baseUrl} data-social-label={social.label}>
+													{social.label}
+												</option>
+											))
+										}
+									</select>
+									<input
+										id="add-footer-social-handle"
+										type="text"
+										maxlength="180"
+										autocomplete="off"
+										class="w-full rounded border border-neutral-300 px-3 py-2 text-sm bg-white"
+										placeholder="utilizador ou URL completa"
+									/>
+									<button
+										type="button"
+										id="btn-add-footer-social"
+										class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 shadow-sm hover:bg-slate-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
+									>
+										Adicionar rede social
+									</button>
+								</div>
+							</div>
 							<div>
 								<label for="add-footer-label" class="block text-xs font-semibold text-neutral-700 mb-1">Label</label>
 								<input
@@ -149,17 +284,17 @@ const footerMenu = await readFooterMenu();
 							</div>
 							<button
 								type="submit"
-								class="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+								class="w-full rounded-xl bg-[#6D28D9] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
 							>
 								Adicionar à lista
 							</button>
 						</form>
 					</div>
 					<div class="min-w-0">
-						<h3 class="text-sm font-semibold text-neutral-800 mb-3">Itens (arrastar para ordenar)</h3>
+						<h3 class="mb-3 text-sm font-semibold text-slate-800">Itens (arrastar para ordenar)</h3>
 						<div id="footer-sortable-list" class="flex flex-col gap-3 min-h-[3rem]"></div>
 						<p id="footer-empty" class="text-sm text-neutral-500 italic py-6 hidden">
-							Nenhum item. Usa o formulário ao lado para adicionar.
+							Nenhum item disponível no momento.
 						</p>
 					</div>
 				</div>
@@ -182,9 +317,19 @@ const footerMenu = await readFooterMenu();
 		}
 	</style>
 
-	<script define:vars={{ initialMain: mainMenu, initialFooter: footerMenu }}>
+	<script
+		is:inline
+		define:vars={{ initialMain: mainMenu, initialFooter: footerMenu, availablePages }}
+	>
+		globalThis.__menusInitialMain = initialMain;
+		globalThis.__menusInitialFooter = initialFooter;
+		globalThis.__menusAvailablePages = availablePages;
+	</script>
+
+	<script>
 		import Sortable from 'sortablejs';
 		import { actions } from 'astro:actions';
+		import { uiStatusMessages } from '../../lib/ui-status-messages';
 
 		const GRIP_SVG = `
 			<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-neutral-400" aria-hidden="true">
@@ -196,14 +341,19 @@ const footerMenu = await readFooterMenu();
 			return typeof row.id === 'string' && row.id.trim() ? row.id.trim() : crypto.randomUUID();
 		}
 
-		let mainItems = structuredClone(initialMain).map((row) => ({
+		const initialMainRaw = (globalThis as Record<string, unknown>).__menusInitialMain;
+		const initialFooterRaw = (globalThis as Record<string, unknown>).__menusInitialFooter;
+		const initialMainRows = Array.isArray(initialMainRaw) ? initialMainRaw : [];
+		const initialFooterRows = Array.isArray(initialFooterRaw) ? initialFooterRaw : [];
+
+		let mainItems = structuredClone(initialMainRows).map((row) => ({
 			id: ensureId(row),
 			label: row.label ?? '',
 			url: row.url ?? '',
 			order: typeof row.order === 'number' ? row.order : 0,
 		}));
 
-		let footerItems = structuredClone(initialFooter).map((row) => ({
+		let footerItems = structuredClone(initialFooterRows).map((row) => ({
 			id: ensureId(row),
 			label: row.label ?? '',
 			url: row.url ?? '',
@@ -226,6 +376,12 @@ const footerMenu = await readFooterMenu();
 		const mainEmpty = document.getElementById('main-empty');
 		const footerEmpty = document.getElementById('footer-empty');
 		const saveStatus = document.getElementById('save-status');
+		const mainExistingPage = document.getElementById('add-main-existing-page');
+		const footerExistingPage = document.getElementById('add-footer-existing-page');
+		const mainSocialPlatform = document.getElementById('add-main-social-platform');
+		const mainSocialHandle = document.getElementById('add-main-social-handle');
+		const footerSocialPlatform = document.getElementById('add-footer-social-platform');
+		const footerSocialHandle = document.getElementById('add-footer-social-handle');
 
 		function sortPairs(items) {
 			return items
@@ -282,7 +438,7 @@ const footerMenu = await readFooterMenu();
 				const card = document.createElement('div');
 				card.dataset.menuItemId = it.id;
 				card.className =
-					'flex flex-row items-stretch gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition-shadow';
+					'flex flex-row items-stretch gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow';
 
 				card.innerHTML = `
 					<button type="button" class="menu-drag-handle flex shrink-0 cursor-grab touch-none items-center justify-center rounded-lg border border-transparent px-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:cursor-grabbing" aria-label="Arrastar para reordenar">
@@ -352,7 +508,7 @@ const footerMenu = await readFooterMenu();
 				const card = document.createElement('div');
 				card.dataset.menuItemId = it.id;
 				card.className =
-					'flex flex-row items-stretch gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm transition-shadow';
+					'flex flex-row items-stretch gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow';
 
 				card.innerHTML = `
 					<button type="button" class="menu-drag-handle flex shrink-0 cursor-grab touch-none items-center justify-center rounded-lg border border-transparent px-1 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 active:cursor-grabbing" aria-label="Arrastar para reordenar">
@@ -428,9 +584,9 @@ const footerMenu = await readFooterMenu();
 			if (panelFooter) panelFooter.hidden = isMain;
 
 			const activeTabCls =
-				'rounded-t-lg border border-b-0 border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 shadow-[inset_0_-1px_0_0_white] relative z-[1]';
+				'relative z-[1] rounded-t-xl border border-b-0 border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-[inset_0_-1px_0_0_white]';
 			const idleTabCls =
-				'rounded-t-lg border border-transparent border-b-neutral-200 bg-neutral-200/80 px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-200';
+				'relative z-[1] rounded-t-xl border border-transparent border-b-slate-200 bg-slate-100 px-5 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-200/80 hover:text-slate-900';
 
 			if (tabMain) {
 				tabMain.setAttribute('aria-selected', String(isMain));
@@ -447,6 +603,158 @@ const footerMenu = await readFooterMenu();
 
 		tabMain?.addEventListener('click', () => setTab('main'));
 		tabFooter?.addEventListener('click', () => setTab('footer'));
+
+		function pageFromSelectValue(raw: string): { label: string; url: string } | null {
+			if (!raw) return null;
+			try {
+				const parsed = JSON.parse(raw) as { label?: unknown; url?: unknown };
+				const label = typeof parsed.label === 'string' ? parsed.label.trim() : '';
+				const url = typeof parsed.url === 'string' ? parsed.url.trim() : '';
+				if (!label || !url) return null;
+				return { label, url };
+			} catch {
+				return null;
+			}
+		}
+
+		function buildSocialUrl(baseUrl: string, handleOrUrl: string): string {
+			const raw = handleOrUrl.trim();
+			if (!raw) return '';
+			if (/^https?:\/\//i.test(raw)) return raw;
+			return `${baseUrl}${raw.replace(/^@+/, '')}`;
+		}
+
+		function selectedSocial(selectEl: HTMLElement | null): { label: string; baseUrl: string } | null {
+			if (!(selectEl instanceof HTMLSelectElement)) return null;
+			const option = selectEl.selectedOptions.item(0);
+			if (!option) return null;
+			const label = option.dataset.socialLabel?.trim() ?? '';
+			const baseUrl = option.dataset.baseUrl?.trim() ?? '';
+			if (!label || !baseUrl) return null;
+			return { label, baseUrl };
+		}
+
+		mainExistingPage?.addEventListener('change', () => {
+			if (!(mainExistingPage instanceof HTMLSelectElement)) return;
+			const selected = pageFromSelectValue(mainExistingPage.value);
+			if (!selected) return;
+			const labelInput = document.getElementById('add-main-label');
+			const urlInput = document.getElementById('add-main-url');
+			if (labelInput instanceof HTMLInputElement) labelInput.value = selected.label;
+			if (urlInput instanceof HTMLInputElement) urlInput.value = selected.url;
+		});
+
+		footerExistingPage?.addEventListener('change', () => {
+			if (!(footerExistingPage instanceof HTMLSelectElement)) return;
+			const selected = pageFromSelectValue(footerExistingPage.value);
+			if (!selected) return;
+			const labelInput = document.getElementById('add-footer-label');
+			const urlInput = document.getElementById('add-footer-url');
+			if (labelInput instanceof HTMLInputElement) labelInput.value = selected.label;
+			if (urlInput instanceof HTMLInputElement) urlInput.value = selected.url;
+		});
+
+		document.getElementById('btn-add-main-selected-page')?.addEventListener('click', () => {
+			if (!(mainExistingPage instanceof HTMLSelectElement)) return;
+			const selected = pageFromSelectValue(mainExistingPage.value);
+			if (!selected) {
+				if (saveStatus) saveStatus.textContent = 'Escolhe uma página na lista acima.';
+				return;
+			}
+			mainItems.push({
+				id: crypto.randomUUID(),
+				label: selected.label,
+				url: selected.url,
+				order: nextOrder(mainItems),
+			});
+			mainExistingPage.selectedIndex = 0;
+			const lab = document.getElementById('add-main-label');
+			const u = document.getElementById('add-main-url');
+			if (lab instanceof HTMLInputElement) lab.value = '';
+			if (u instanceof HTMLInputElement) u.value = '';
+			if (saveStatus) {
+				saveStatus.textContent = `«${selected.label}» adicionado ao menu principal. Clica em «Salvar Menu» para gravar.`;
+			}
+			renderMain();
+		});
+
+		document.getElementById('btn-add-footer-selected-page')?.addEventListener('click', () => {
+			if (!(footerExistingPage instanceof HTMLSelectElement)) return;
+			const selected = pageFromSelectValue(footerExistingPage.value);
+			if (!selected) {
+				if (saveStatus) saveStatus.textContent = 'Escolhe uma página na lista acima.';
+				return;
+			}
+			const colSel = document.getElementById('add-footer-column');
+			const column =
+				colSel instanceof HTMLSelectElement && colSel.value === 'useful' ? 'useful' : 'institutional';
+			footerItems.push({
+				id: crypto.randomUUID(),
+				label: selected.label,
+				url: selected.url,
+				order: nextOrder(footerItems),
+				column,
+			});
+			footerExistingPage.selectedIndex = 0;
+			const lab = document.getElementById('add-footer-label');
+			const u = document.getElementById('add-footer-url');
+			if (lab instanceof HTMLInputElement) lab.value = '';
+			if (u instanceof HTMLInputElement) u.value = '';
+			if (saveStatus) {
+				saveStatus.textContent = `«${selected.label}» adicionado ao rodapé. Clica em «Salvar Menu» para gravar.`;
+			}
+			renderFooter();
+		});
+
+		document.getElementById('btn-add-main-social')?.addEventListener('click', () => {
+			const social = selectedSocial(mainSocialPlatform);
+			if (!(mainSocialHandle instanceof HTMLInputElement) || !social) {
+				if (saveStatus) saveStatus.textContent = 'Seleciona a rede social e preenche o utilizador/URL.';
+				return;
+			}
+			const url = buildSocialUrl(social.baseUrl, mainSocialHandle.value);
+			if (!url) {
+				if (saveStatus) saveStatus.textContent = 'Preenche o utilizador/URL da rede social.';
+				return;
+			}
+			mainItems.push({
+				id: crypto.randomUUID(),
+				label: social.label,
+				url,
+				order: nextOrder(mainItems),
+			});
+			if (mainSocialPlatform instanceof HTMLSelectElement) mainSocialPlatform.selectedIndex = 0;
+			mainSocialHandle.value = '';
+			if (saveStatus) saveStatus.textContent = `«${social.label}» adicionado ao menu principal. Clica em «Salvar Menu».`;
+			renderMain();
+		});
+
+		document.getElementById('btn-add-footer-social')?.addEventListener('click', () => {
+			const social = selectedSocial(footerSocialPlatform);
+			if (!(footerSocialHandle instanceof HTMLInputElement) || !social) {
+				if (saveStatus) saveStatus.textContent = 'Seleciona a rede social e preenche o utilizador/URL.';
+				return;
+			}
+			const url = buildSocialUrl(social.baseUrl, footerSocialHandle.value);
+			if (!url) {
+				if (saveStatus) saveStatus.textContent = 'Preenche o utilizador/URL da rede social.';
+				return;
+			}
+			const colSel = document.getElementById('add-footer-column');
+			const column =
+				colSel instanceof HTMLSelectElement && colSel.value === 'useful' ? 'useful' : 'institutional';
+			footerItems.push({
+				id: crypto.randomUUID(),
+				label: social.label,
+				url,
+				order: nextOrder(footerItems),
+				column,
+			});
+			if (footerSocialPlatform instanceof HTMLSelectElement) footerSocialPlatform.selectedIndex = 0;
+			footerSocialHandle.value = '';
+			if (saveStatus) saveStatus.textContent = `«${social.label}» adicionado ao rodapé. Clica em «Salvar Menu».`;
+			renderFooter();
+		});
 
 		document.getElementById('form-add-main')?.addEventListener('submit', (e) => {
 			e.preventDefault();
@@ -528,7 +836,7 @@ const footerMenu = await readFooterMenu();
 					return false;
 				}
 				if (statusEl) {
-					statusEl.textContent = menu === 'main' ? 'Menu Principal guardado.' : 'Menu de Rodapé guardado.';
+					statusEl.textContent = uiStatusMessages.success.menuSaved(menu);
 				}
 				return true;
 			} catch (err) {
@@ -545,6 +853,10 @@ const footerMenu = await readFooterMenu();
 			}
 		});
 
-		setTab('main');
+		if (window.location.hash === '#footer' || window.location.hash === '#panel-footer') {
+			setTab('footer');
+		} else {
+			setTab('main');
+		}
 	</script>
 </DashboardLayout>

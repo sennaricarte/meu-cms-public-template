@@ -2,6 +2,7 @@
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
 import { loadPostForEditor } from '../../lib/blog-md-parse';
 import { readCategories, readTags } from '../../lib/taxonomy-data';
+import { uiStatusMessages } from '../../lib/ui-status-messages';
 
 export const prerender = false;
 
@@ -18,12 +19,18 @@ const taxonomyTags = await readTags();
 const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 ---
 
-<DashboardLayout title={initialPost ? 'Editar artigo' : 'Novo artigo'} heading={initialPost ? 'Editar artigo' : 'Novo artigo'}>
+<DashboardLayout
+	title={initialPost ? 'Editar artigo' : 'Novo artigo'}
+	heading={initialPost ? 'Editar artigo' : 'Novo artigo'}
+	sectionTitle="Artigos"
+	sectionActionLabel="Adicionar Novo"
+	sectionActionHref="/admin/editor"
+>
 	<div class="space-y-8">
 		<form id="editor-form" class="space-y-8">
 			<div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] gap-8 items-start">
 				<div class="min-w-0 space-y-6">
-					<div class="rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
+					<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 						<label for="field-title" class="block font-medium text-neutral-800">Título do artigo</label>
 						<p class="text-xs text-neutral-500 mt-0.5 mb-1">Aparece como H1 na página pública.</p>
 						<input
@@ -37,7 +44,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 						/>
 					</div>
 
-					<div class="rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5">
+					<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 						<label for="field-author" class="block font-medium text-neutral-800">Autor (opcional)</label>
 						<input
 							id="field-author"
@@ -56,16 +63,32 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 
 					<!-- Upload de Imagem com Preview -->
 					<div class="rounded-xl border border-slate-200 p-4 text-center bg-white shadow-sm">
-						<label for="image-upload" class="block font-medium mb-2">Imagem de destaque (enviada como WebP)</label>
-						<input
-							id="image-upload"
-							type="file"
-							accept="image/jpeg,image/png,image/webp"
-							class="mb-4"
-							aria-describedby="upload-hint"
-						/>
+						<p class="font-medium mb-1">Imagem de destaque</p>
+						<p id="upload-hint" class="text-sm text-neutral-500 mb-3">
+							Envie um ficheiro novo ou escolha uma imagem já na{' '}
+							<a href="/admin/media" class="font-medium text-violet-700 underline hover:text-violet-900"
+								>Central de mídia</a
+							>
+							(o servidor grava WebP em <code class="text-xs bg-slate-100 px-1 rounded">public/uploads/</code>).
+						</p>
+						<div class="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center mb-4">
+							<label class="sr-only" for="image-upload">Carregar imagem do computador</label>
+							<input
+								id="image-upload"
+								type="file"
+								accept="image/jpeg,image/png,image/webp"
+								class="text-sm text-left sm:flex-1 file:mr-3 file:rounded-lg file:border-0 file:bg-violet-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-violet-800 hover:file:bg-violet-100"
+								aria-describedby="upload-hint"
+							/>
+							<button
+								type="button"
+								id="hero-open-media"
+								class="rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-violet-900 shadow-sm transition-colors hover:bg-violet-100 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-violet-600"
+							>
+								Escolher da biblioteca
+							</button>
+						</div>
 						<input type="hidden" name="heroImage" id="heroImage-url" value="" />
-						<p id="upload-hint" class="text-sm text-neutral-500 mb-2">Apenas JPEG, PNG ou WebP. Requer sessão admin.</p>
 						<div id="preview-container" class="hidden">
 							<img id="image-preview" src="" alt="Pré-visualização da imagem de destaque" class="max-h-48 mx-auto rounded" width="800" height="450" />
 						</div>
@@ -74,7 +97,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 			<!-- Área de Conteúdo — WYSIWYG nativo (document.execCommand) -->
 			<div class="space-y-3">
 				<span id="field-content-label" class="block font-medium">Conteúdo</span>
-				<div class="rounded-xl border border-slate-200/90 overflow-hidden bg-white shadow-sm">
+				<div class="rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm">
 					<div
 						class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-slate-200 bg-white"
 					>
@@ -323,22 +346,23 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 					margin: 0.35rem 0;
 				}
 				.wysiwyg-editor figure.wysiwyg-youtube-embed {
-					margin: 1rem 0;
+					display: block;
+					width: 100%;
 					max-width: 100%;
+					margin: 1rem auto;
 				}
 				.wysiwyg-editor .wysiwyg-youtube-inner {
 					position: relative;
+					width: 100%;
 					padding-bottom: 56.25%;
 					height: 0;
 					overflow: hidden;
-					max-width: 100%;
 					border-radius: 8px;
 					background: #0f172a;
 				}
 				.wysiwyg-editor .wysiwyg-youtube-inner iframe {
 					position: absolute;
-					top: 0;
-					left: 0;
+					inset: 0;
 					width: 100%;
 					height: 100%;
 					border: 0;
@@ -410,14 +434,14 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 
 					<button
 						type="submit"
-						class="w-full sm:w-auto bg-violet-600 text-white px-6 py-2.5 rounded-xl hover:bg-violet-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-violet-600 font-semibold shadow-sm"
+						class="w-full rounded-xl bg-[#6D28D9] px-6 py-2.5 font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9] sm:w-auto"
 					>
 						Publicar Artigo
 					</button>
 				</div>
 
 				<aside class="space-y-5 xl:sticky xl:top-6 self-start" aria-labelledby="seo-aside-heading">
-					<section class="rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm sm:p-5 space-y-5">
+					<section class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 space-y-5">
 						<h2 id="seo-aside-heading" class="text-sm font-semibold text-neutral-900 border-b border-slate-200 pb-2">
 							Configurações de SEO
 						</h2>
@@ -487,8 +511,8 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 							aria-describedby="slug-hint"
 						/>
 						<p id="slug-hint" class="text-xs text-neutral-500 mt-1">
-							Ficheiro <code class="text-xs bg-white px-1 rounded border border-neutral-200">slug.md</code> em
-							<code class="text-xs">src/content/blog/</code>. Sugestão automática a partir do título até editares o slug manualmente.
+							O slug define o URL do artigo (ex.: <code class="text-xs bg-white px-1 rounded border border-neutral-200">meu-post</code> -> <code class="text-xs">/meu-post/</code>).
+							Sugestão automática a partir do título até editares o slug manualmente.
 						</p>
 					</div>
 
@@ -507,7 +531,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 							))}
 						</select>
 						<p id="category-hint" class="text-xs text-neutral-500 mt-1">
-							Gestão em <a href="/admin/taxonomies" class="text-violet-600 underline">Taxonomias</a>.
+							Gestão de categorias em <a href="/admin/taxonomies" class="text-violet-600 underline">Categorias</a>.
 						</p>
 					</div>
 
@@ -529,7 +553,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 							))}
 						</select>
 						<p id="tags-hint" class="text-xs text-neutral-500 mt-1">
-							Máximo 10 tags no frontmatter. <a href="/admin/taxonomies" class="text-violet-600 underline">Gerir tags</a>.
+							Máximo 10 tags no frontmatter. <a href="/admin/tags" class="text-violet-600 underline">Gerir tags</a>.
 						</p>
 					</div>
 
@@ -623,7 +647,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 					<div id="media-modal-body" class="p-4 overflow-y-auto flex-1 flex flex-col gap-3 min-h-0">
 						<div class="shrink-0 space-y-1.5">
 							<label for="media-modal-search" class="block text-sm font-medium text-neutral-700">
-								Buscar por nome
+								Buscar por imagem
 							</label>
 							<input
 								type="search"
@@ -645,7 +669,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 								Imagens Recentes (30 dias)
 							</label>
 						</div>
-						<p id="media-modal-loading" class="text-sm text-neutral-500 shrink-0">A carregar…</p>
+						<p id="media-modal-loading" class="text-sm text-neutral-500 shrink-0">{uiStatusMessages.loading.loadingImages}</p>
 						<p id="media-modal-empty" class="hidden text-sm text-neutral-500 shrink-0">
 							Nenhuma imagem encontrada em <code class="text-xs bg-slate-100 px-1 rounded">public/uploads/</code>.
 						</p>
@@ -721,7 +745,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 							</button>
 							<button
 								type="submit"
-								class="px-4 py-2 text-sm font-semibold text-white bg-violet-600 rounded-xl hover:bg-violet-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-violet-600"
+								class="rounded-xl bg-[#6D28D9] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
 							>
 								Aplicar link
 							</button>
@@ -733,8 +757,39 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 		</form>
 	</div>
 
-	<script define:vars={{ initialPost }}>
+	<script is:inline define:vars={{ initialPost }}>
+		globalThis.__editorInitialPost = initialPost;
+	</script>
+
+	<script>
 		import { actions } from 'astro:actions';
+		import { uiStatusMessages } from '../../lib/ui-status-messages';
+
+		type EditorInitialMeta = {
+			title: string;
+			description: string;
+			draft: boolean;
+			slug?: string;
+			seoTitle?: string;
+			pubDate?: string;
+			category?: string;
+			tags?: string[];
+			author?: string;
+			affiliateLinks?: boolean;
+			heroImage?: string;
+		};
+		type EditorInitialPost = {
+			filename: string;
+			body: string;
+			meta: EditorInitialMeta;
+		};
+		const initialPostRaw = (globalThis as Record<string, unknown>).__editorInitialPost;
+		const initialPost: EditorInitialPost | null =
+			initialPostRaw !== null &&
+			initialPostRaw !== undefined &&
+			typeof initialPostRaw === 'object'
+				? (initialPostRaw as EditorInitialPost)
+				: null;
 
 		const fileInput = document.querySelector('#image-upload');
 		const previewContainer = document.querySelector('#preview-container');
@@ -1379,6 +1434,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 			const btnYoutube = document.querySelector('#toolbar-insert-youtube');
 			const btnMedia = document.querySelector('#toolbar-open-media');
 			const mediaModal = document.querySelector('#media-modal');
+			const mediaModalTitleEl = document.querySelector('#media-modal-title');
 			const mediaModalClose = document.querySelector('#media-modal-close');
 			const mediaGrid = document.querySelector('#media-modal-grid');
 			const mediaLoading = document.querySelector('#media-modal-loading');
@@ -1386,9 +1442,31 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 			const mediaSearch = document.querySelector('#media-modal-search');
 			const mediaRecentOnly = document.querySelector('#media-modal-recent');
 
-			type MediaImage = { url: string; name: string; updatedAt?: string };
+			const MEDIA_MODAL_TITLE_DEFAULT = 'Central de Mídia';
+			const MEDIA_MODAL_TITLE_HERO = 'Escolher imagem de destaque';
+			let mediaModalPurpose: 'wysiwyg' | 'hero' = 'wysiwyg';
+
+			type MediaImage = {
+				url: string;
+				name: string;
+				updatedAt?: string;
+				alt?: string;
+				title?: string;
+				caption?: string;
+				description?: string;
+			};
 			let mediaImagesCache: MediaImage[] = [];
 			let lastSourceCaret: { start: number; end: number } | null = null;
+
+			function applyHeroFromLibrary(url: string, meta?: { alt?: string }) {
+				if (heroHidden instanceof HTMLInputElement) heroHidden.value = url;
+				if (imagePreview instanceof HTMLImageElement) {
+					imagePreview.src = url;
+					imagePreview.alt =
+						meta?.alt?.trim() || 'Pré-visualização da imagem de destaque';
+				}
+				previewContainer?.classList.remove('hidden');
+			}
 
 			function rememberSourceCaret() {
 				const sv = document.querySelector('#wysiwyg-source-view');
@@ -1402,9 +1480,11 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 				return i > 0 ? name.slice(0, i) : name;
 			}
 
-			function insertImageFromMedia(url: string, name: string) {
-				const altText = imgAltFromFilename(name);
-				const imgTag = `<img class="wysiwyg-inserted-img" src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(altText)}" loading="lazy" decoding="async" />`;
+			function insertImageFromMedia(url: string, name: string, meta?: Pick<MediaImage, 'alt' | 'title'>) {
+				const altText = meta?.alt?.trim() || imgAltFromFilename(name);
+				const titleAttr = meta?.title?.trim();
+				const titlePart = titleAttr ? ` title="${escapeHtmlAttr(titleAttr)}"` : '';
+				const imgTag = `<img class="wysiwyg-inserted-img" src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(altText)}"${titlePart} loading="lazy" decoding="async" />`;
 				const sourceView = document.querySelector('#wysiwyg-source-view');
 				if (sourceView instanceof HTMLTextAreaElement && !sourceView.classList.contains('hidden')) {
 					let start = sourceView.selectionStart ?? sourceView.value.length;
@@ -1429,12 +1509,18 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 			function renderMediaGridButtons(images: MediaImage[]) {
 				if (!(mediaGrid instanceof HTMLElement)) return;
 				mediaGrid.replaceChildren();
-				for (const { url, name } of images) {
+				for (const img of images) {
+					const { url, name } = img;
 					const btn = document.createElement('button');
 					btn.type = 'button';
 						btn.className =
 							'relative aspect-square rounded-xl overflow-hidden border border-slate-200 hover:border-violet-500 focus:outline focus:outline-2 focus:outline-violet-600 bg-slate-50 group shadow-sm';
-					btn.setAttribute('aria-label', `Inserir imagem ${name}`);
+					btn.setAttribute(
+						'aria-label',
+						mediaModalPurpose === 'hero'
+							? `Usar como imagem de destaque: ${name}`
+							: `Inserir imagem ${name}`,
+					);
 					const thumb = document.createElement('img');
 					thumb.src = url;
 					thumb.alt = '';
@@ -1443,7 +1529,12 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 					thumb.className = 'w-full h-full object-cover';
 					btn.appendChild(thumb);
 					btn.addEventListener('click', () => {
-						insertImageFromMedia(url, name);
+						if (mediaModalPurpose === 'hero') {
+							applyHeroFromLibrary(url, img);
+							closeMediaModal();
+							return;
+						}
+						insertImageFromMedia(url, name, img);
 						closeMediaModal();
 					});
 					mediaGrid.appendChild(btn);
@@ -1492,8 +1583,8 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 				if (!filtered.length) {
 					mediaGrid.classList.add('hidden');
 					mediaEmpty.textContent = recentOnly
-						? 'Nenhuma imagem recente corresponde ao filtro.'
-						: 'Nenhuma imagem corresponde à pesquisa.';
+						? 'Nenhum resultado para o filtro de imagens recentes.'
+						: 'Nenhum resultado para a pesquisa.';
 					mediaEmpty.classList.remove('hidden');
 					return;
 				}
@@ -1503,8 +1594,13 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 				renderMediaGridButtons(filtered);
 			}
 
-			function openMediaModal() {
+			function openMediaModal(purpose: 'wysiwyg' | 'hero' = 'wysiwyg') {
 				if (!(mediaModal instanceof HTMLElement)) return;
+				mediaModalPurpose = purpose;
+				if (mediaModalTitleEl instanceof HTMLElement) {
+					mediaModalTitleEl.textContent =
+						purpose === 'hero' ? MEDIA_MODAL_TITLE_HERO : MEDIA_MODAL_TITLE_DEFAULT;
+				}
 				if (mediaSearch instanceof HTMLInputElement) mediaSearch.value = '';
 				if (mediaRecentOnly instanceof HTMLInputElement) mediaRecentOnly.checked = false;
 				mediaModal.classList.remove('hidden');
@@ -1514,6 +1610,10 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 
 			function closeMediaModal() {
 				if (!(mediaModal instanceof HTMLElement)) return;
+				mediaModalPurpose = 'wysiwyg';
+				if (mediaModalTitleEl instanceof HTMLElement) {
+					mediaModalTitleEl.textContent = MEDIA_MODAL_TITLE_DEFAULT;
+				}
 				mediaModal.classList.add('hidden');
 				mediaModal.setAttribute('aria-hidden', 'true');
 				const sourceView = document.querySelector('#wysiwyg-source-view');
@@ -1558,7 +1658,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 					});
 				} catch {
 					mediaLoading.classList.add('hidden');
-					mediaEmpty.textContent = 'Erro de rede ao listar imagens.';
+					mediaEmpty.textContent = uiStatusMessages.error.loadImages;
 					mediaEmpty.classList.remove('hidden');
 				}
 			}
@@ -1566,8 +1666,90 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 			mediaSearch?.addEventListener('input', () => applyMediaSearchFilter());
 			mediaRecentOnly?.addEventListener('change', () => applyMediaSearchFilter());
 
+			/**
+			 * iframes inseridos via template.innerHTML são removidos pelo browser dentro de
+			 * contenteditable — construímos o embed em DOM e suportamos o painel HTML (textarea).
+			 */
+			function insertYoutubeEmbed(videoId: string) {
+				const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
+				const htmlBlock = `<figure class="wysiwyg-youtube-embed" contenteditable="false" data-youtube-id="${videoId}"><div class="wysiwyg-youtube-inner"><iframe src="${embedUrl}" title="YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></figure><p><br></p>`;
+
+				const sourceView = document.querySelector('#wysiwyg-source-view');
+				if (sourceView instanceof HTMLTextAreaElement && !sourceView.classList.contains('hidden')) {
+					let start = sourceView.selectionStart ?? sourceView.value.length;
+					let end = sourceView.selectionEnd ?? start;
+					if (lastSourceCaret && document.activeElement !== sourceView) {
+						start = lastSourceCaret.start;
+						end = lastSourceCaret.end;
+					}
+					const before = sourceView.value.slice(0, start);
+					const after = sourceView.value.slice(end);
+					sourceView.value = before + htmlBlock + after;
+					const pos = start + htmlBlock.length;
+					sourceView.selectionStart = sourceView.selectionEnd = pos;
+					sourceView.focus();
+					syncWysiwygToTextarea();
+					updateWysiwygMetrics();
+					return;
+				}
+
+				editor.focus();
+				let range: Range;
+				if (lastCaretRange && rangeInsideEditor(editor, lastCaretRange)) {
+					range = lastCaretRange.cloneRange();
+				} else {
+					range = document.createRange();
+					range.selectNodeContents(editor);
+					range.collapse(false);
+				}
+
+				const figure = document.createElement('figure');
+				figure.className = 'wysiwyg-youtube-embed';
+				figure.setAttribute('contenteditable', 'false');
+				figure.dataset.youtubeId = videoId;
+
+				const inner = document.createElement('div');
+				inner.className = 'wysiwyg-youtube-inner';
+
+				const iframe = document.createElement('iframe');
+				iframe.src = embedUrl;
+				iframe.title = 'YouTube';
+				iframe.setAttribute(
+					'allow',
+					'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+				);
+				iframe.setAttribute('allowfullscreen', '');
+				iframe.loading = 'lazy';
+				iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+				inner.appendChild(iframe);
+				figure.appendChild(inner);
+
+				const tail = document.createElement('p');
+				tail.innerHTML = '<br>';
+
+				const frag = document.createDocumentFragment();
+				frag.appendChild(figure);
+				frag.appendChild(tail);
+
+				range.deleteContents();
+				range.insertNode(frag);
+
+				if (tail.parentNode) {
+					range.setStart(tail, 0);
+					range.collapse(true);
+					const sel = window.getSelection();
+					sel?.removeAllRanges();
+					sel?.addRange(range);
+				}
+
+				syncWysiwygToTextarea();
+				updateWysiwygMetrics();
+			}
+
 			btnYoutube?.addEventListener('mousedown', () => {
 				rememberCaret();
+				rememberSourceCaret();
 			});
 			btnYoutube?.addEventListener('click', (e) => {
 				e.preventDefault();
@@ -1578,9 +1760,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 					window.alert('URL do YouTube inválida. Use um link de um vídeo (watch, youtu.be, embed ou Shorts).');
 					return;
 				}
-				const embed = `https://www.youtube-nocookie.com/embed/${id}`;
-				const html = `<figure class="wysiwyg-youtube-embed" contenteditable="false" data-youtube-id="${id}"><div class="wysiwyg-youtube-inner"><iframe src="${embed}" title="YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></figure><p><br></p>`;
-				insertHtmlAtCaret(editor, html, lastCaretRange);
+				insertYoutubeEmbed(id);
 			});
 
 			btnMedia?.addEventListener('mousedown', () => {
@@ -1589,7 +1769,12 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 			});
 			btnMedia?.addEventListener('click', (e) => {
 				e.preventDefault();
-				openMediaModal();
+				openMediaModal('wysiwyg');
+			});
+
+			document.querySelector('#hero-open-media')?.addEventListener('click', (e) => {
+				e.preventDefault();
+				openMediaModal('hero');
 			});
 
 			mediaModalClose?.addEventListener('click', () => closeMediaModal());
@@ -1903,7 +2088,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 				const data = await response.json();
 
 				if (!response.ok) {
-					alert(data.error ?? 'Falha no upload.');
+					alert(data.error ?? uiStatusMessages.error.upload);
 					return;
 				}
 
@@ -1915,7 +2100,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 				}
 				previewContainer?.classList.remove('hidden');
 			} catch (err) {
-				alert(err instanceof Error ? err.message : 'Erro de rede no upload.');
+				alert(err instanceof Error ? err.message : uiStatusMessages.error.upload);
 			}
 		});
 
@@ -2034,6 +2219,17 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 			const draftEl = document.querySelector('#field-draft');
 			const draft = draftEl instanceof HTMLInputElement && draftEl.checked;
 
+			const descriptionTrim = (fd.get('description') ?? '').toString().trim();
+			if (!draft && descriptionTrim.length < 50) {
+				window.alert(
+					`Para publicar o artigo, a meta description deve ter pelo menos 50 caracteres (SEO).\n\nCaracteres actuais: ${descriptionTrim.length}.\n\nOu marca «Salvar como rascunho» para gravar com uma descrição mais curta.`,
+				);
+				document.querySelector('#field-description')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				const descField = document.querySelector('#field-description');
+				if (descField instanceof HTMLTextAreaElement) descField.focus();
+				return;
+			}
+
 			const heroEl = document.querySelector('#heroImage-url');
 			const heroImage =
 				heroEl instanceof HTMLInputElement && heroEl.value.trim()
@@ -2052,7 +2248,7 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 				title: (fd.get('title') ?? '').toString().trim(),
 				seoTitle: seoTitleRaw || undefined,
 				slug: base,
-				description: (fd.get('description') ?? '').toString().trim(),
+				description: descriptionTrim,
 				pubDate: (fd.get('pubDate') ?? '').toString(),
 				category: categoryPayload,
 				tags: tagsList,
@@ -2064,11 +2260,16 @@ const tagSelectSize = Math.min(12, Math.max(4, taxonomyTags.length || 4));
 			});
 
 			if (error) {
-				alert(error.message);
+				let msg = error.message?.trim() || uiStatusMessages.error.saveArticle;
+				if (/meta description|50 caracteres/i.test(msg)) {
+					msg +=
+						'\n\nComplete o campo «Meta description» no painel lateral (mín. 50 caracteres para publicar).';
+				}
+				window.alert(msg);
 				return;
 			}
 			currentFilename = data.filename;
-			window.alert(`Artigo gravado com sucesso: ${data.filename}`);
+			window.alert(uiStatusMessages.success.articleSaved(data.filename));
 			resetEditorAfterSave({ isNewPost: !initialPost });
 		});
 	</script>

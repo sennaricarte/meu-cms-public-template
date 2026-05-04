@@ -1,0 +1,499 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import categoriesData from '../../data/categories.json';
+import { uiStatusMessages } from '../../lib/ui-status-messages';
+
+export const prerender = false;
+
+const destinationCategories = Array.isArray(categoriesData)
+	? categoriesData
+			.map((item) => ({
+				name: typeof item?.name === 'string' ? item.name.trim() : '',
+			}))
+			.filter((item) => item.name.length > 0)
+	: [];
+---
+
+<DashboardLayout
+	title="Importar conteúdo — Admin"
+	heading="Importação"
+	sectionTitle="WordPress e pacote JSON"
+>
+	<div class="space-y-6">
+		<div
+			id="import-error-banner"
+			class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800"
+			role="alert"
+			aria-live="assertive"
+		></div>
+
+		<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+			<h2 class="text-lg font-semibold text-slate-900">Importar arquivo XML do WordPress</h2>
+			<p class="mt-1 text-sm text-slate-500">
+				Envie o arquivo de exportação (.xml). O importador converte os posts para Markdown,
+				baixa imagens para a Central de Mídia e ignora slugs já existentes.
+			</p>
+
+			<form id="wp-import-form" class="mt-6 space-y-5" enctype="multipart/form-data">
+				<div>
+					<p class="block text-sm font-medium text-slate-700">Arquivo XML do WordPress</p>
+					<div
+						id="xml-dropzone"
+						class="relative mt-2 min-h-[11rem] rounded-2xl border-2 border-dashed border-violet-300 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 text-center shadow-sm transition-all hover:border-[#6D28D9] hover:shadow-md focus-within:border-[#6D28D9] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#6D28D9]"
+					>
+						<input
+							id="field-xml-file"
+							type="file"
+							accept=".xml,text/xml,application/xml"
+							required
+							class="absolute inset-0 z-10 h-full min-h-[11rem] w-full cursor-pointer opacity-0"
+							aria-label="Selecionar ou largar aqui o arquivo XML do WordPress"
+						/>
+						<div class="pointer-events-none flex flex-col items-center p-6">
+							<div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-violet-100 text-[#6D28D9]">
+								<svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+									<path d="M12 16V4"></path>
+									<path d="M7 9l5-5 5 5"></path>
+									<path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+								</svg>
+							</div>
+							<p class="text-sm font-semibold text-slate-900">
+								Arraste e solte o arquivo XML aqui
+							</p>
+							<p class="mt-1 text-xs text-slate-500">
+								ou clique para selecionar o arquivo de exportação WordPress (WXR)
+							</p>
+							<p id="xml-file-name" class="mt-3 text-xs font-medium text-[#6D28D9]" aria-live="polite">
+								{uiStatusMessages.empty.noFileSelected}
+							</p>
+						</div>
+					</div>
+				</div>
+				<div>
+					<label for="field-destination-category" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+						Categoria de Destino
+					</label>
+					<select
+						id="field-destination-category"
+						class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-[#6D28D9] focus:outline focus:outline-2 focus:outline-[#6D28D9]"
+					>
+						<option value="">Manter categoria original do WordPress</option>
+						{
+							destinationCategories.map((category) => (
+								<option value={category.name}>{category.name}</option>
+							))
+						}
+					</select>
+				</div>
+
+				<div class="flex flex-wrap items-center gap-3">
+					<button
+						type="submit"
+						id="btn-start-import"
+						class="inline-flex items-center rounded-xl bg-[#6D28D9] px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9] disabled:cursor-not-allowed disabled:opacity-70"
+					>
+						Processar Arquivo XML
+					</button>
+					<p id="import-status" class="text-sm text-slate-600" role="status" aria-live="polite"></p>
+				</div>
+			</form>
+		</div>
+
+		<div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+			<h2 class="text-lg font-semibold text-slate-900">Importar pacote JSON (recomendado para outras plataformas)</h2>
+			<p class="mt-1 text-sm text-slate-500">
+				Formato fixo <code class="rounded bg-slate-100 px-1 py-0.5 text-xs">blogonauta-blog-import-v1</code>, validado no servidor
+				antes de gravar — menos erros do que colar HTML à mão. Ideal para exportar de Lovable, Supabase ou scripts.
+				<a
+					class="ml-1 font-medium text-[#6D28D9] underline hover:text-[#5b21b6]"
+					href="/blogonauta-blog-import-v1.example.json"
+					target="_blank"
+					rel="noopener noreferrer"
+				>Ver ficheiro de exemplo</a>.
+			</p>
+			<ul class="mt-3 list-inside list-disc text-xs text-slate-500">
+				<li><strong>format</strong> tem de ser exatamente <code class="rounded bg-slate-100 px-0.5">blogonauta-blog-import-v1</code>.</li>
+				<li><strong>imageBaseUrl</strong> — URL base para resolver imagens relativas (ex. preview Lovable).</li>
+				<li>Cada post: <strong>title</strong> até 400 caracteres no JSON (o gravado no site fica ≤60 por SEO); <strong>description</strong> 50–160; só <strong>bodyHtml</strong> <em>ou</em> <strong>bodyMarkdown</strong>.</li>
+			</ul>
+
+			<form id="json-import-form" class="mt-6 space-y-5" enctype="multipart/form-data">
+				<div>
+					<p class="block text-sm font-medium text-slate-700">Arquivo JSON</p>
+					<div
+						id="json-dropzone"
+						class="relative mt-2 min-h-[11rem] rounded-2xl border-2 border-dashed border-emerald-300 bg-gradient-to-br from-emerald-50 via-white to-teal-50 text-center shadow-sm transition-all hover:border-emerald-600 hover:shadow-md focus-within:border-emerald-600 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-emerald-600"
+					>
+						<input
+							id="field-json-file"
+							type="file"
+							accept=".json,application/json"
+							required
+							class="absolute inset-0 z-10 h-full min-h-[11rem] w-full cursor-pointer opacity-0"
+							aria-label="Selecionar ou largar aqui o arquivo JSON de importação"
+						/>
+						<div class="pointer-events-none flex flex-col items-center p-6">
+							<div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
+								<svg viewBox="0 0 24 24" class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+									<path d="M12 16V4"></path>
+									<path d="M7 9l5-5 5 5"></path>
+									<path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+								</svg>
+							</div>
+							<p class="text-sm font-semibold text-slate-900">Arraste e solte o .json aqui</p>
+							<p class="mt-1 text-xs text-slate-500">ou clique para selecionar (máx. 6 MB)</p>
+							<p id="json-file-name" class="mt-3 text-xs font-medium text-emerald-800" aria-live="polite">
+								{uiStatusMessages.empty.noFileSelected}
+							</p>
+						</div>
+					</div>
+				</div>
+				<div>
+					<label for="field-json-destination-category" class="block text-xs font-semibold uppercase tracking-wide text-slate-500">
+						Categoria de destino (opcional)
+					</label>
+					<select
+						id="field-json-destination-category"
+						class="mt-1.5 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm shadow-sm focus:border-emerald-600 focus:outline focus:outline-2 focus:outline-emerald-600"
+					>
+						<option value="">Usar o campo category de cada post no JSON</option>
+						{
+							destinationCategories.map((category) => (
+								<option value={category.name}>{category.name}</option>
+							))
+						}
+					</select>
+				</div>
+				<div class="flex flex-wrap items-center gap-3">
+					<button
+						type="submit"
+						id="btn-json-import"
+						class="inline-flex items-center rounded-xl bg-emerald-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-800 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+					>
+						Processar JSON
+					</button>
+					<p id="json-import-status" class="text-sm text-slate-600" role="status" aria-live="polite"></p>
+				</div>
+			</form>
+		</div>
+
+		<div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+			<div class="flex items-center justify-between gap-3">
+				<h3 class="text-sm font-semibold uppercase tracking-wide text-slate-500">Progresso</h3>
+				<span id="progress-label" class="text-xs font-medium text-slate-500">0%</span>
+			</div>
+			<div class="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+				<div id="progress-bar" class="h-full w-0 rounded-full bg-[#6D28D9] transition-all duration-300"></div>
+			</div>
+			<ul id="import-log" class="mt-4 max-h-80 space-y-2 overflow-y-auto rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-sm text-slate-700"></ul>
+		</div>
+	</div>
+
+	<script>
+		import { actions } from 'astro:actions';
+		import { uiStatusMessages } from '../../lib/ui-status-messages';
+
+		const form = document.getElementById('wp-import-form');
+		const fieldXmlFile = document.getElementById('field-xml-file');
+		const dropzone = document.getElementById('xml-dropzone');
+		const xmlFileName = document.getElementById('xml-file-name');
+		const fieldDestinationCategory = document.getElementById('field-destination-category');
+		const btnStart = document.getElementById('btn-start-import');
+		const statusEl = document.getElementById('import-status');
+		const progressBar = document.getElementById('progress-bar');
+		const progressLabel = document.getElementById('progress-label');
+		const logEl = document.getElementById('import-log');
+		const errorBanner = document.getElementById('import-error-banner');
+		const jsonForm = document.getElementById('json-import-form');
+		const fieldJsonFile = document.getElementById('field-json-file');
+		const jsonDropzone = document.getElementById('json-dropzone');
+		const jsonFileName = document.getElementById('json-file-name');
+		const fieldJsonDestinationCategory = document.getElementById('field-json-destination-category');
+		const btnJsonImport = document.getElementById('btn-json-import');
+		const jsonStatusEl = document.getElementById('json-import-status');
+
+		function appendLog(text, tone = 'normal') {
+			if (!(logEl instanceof HTMLUListElement)) return;
+			const li = document.createElement('li');
+			li.className =
+				'rounded-lg border px-3 py-2 ' +
+				(tone === 'error'
+					? 'border-red-200 bg-red-50 text-red-800'
+					: tone === 'warn'
+						? 'border-amber-200 bg-amber-50 text-amber-800'
+						: 'border-slate-200 bg-white text-slate-700');
+			li.textContent = text;
+			logEl.prepend(li);
+		}
+
+		function hideErrorBanner() {
+			if (!(errorBanner instanceof HTMLElement)) return;
+			errorBanner.classList.add('hidden');
+			errorBanner.textContent = '';
+		}
+
+		function showErrorBanner(message) {
+			if (!(errorBanner instanceof HTMLElement)) return;
+			errorBanner.textContent = message;
+			errorBanner.classList.remove('hidden');
+		}
+
+		function setProgress(done, total) {
+			const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+			if (progressBar instanceof HTMLElement) progressBar.style.width = `${pct}%`;
+			if (progressLabel instanceof HTMLElement) progressLabel.textContent = `${pct}%`;
+		}
+
+		function showSelectedFileName(file) {
+			if (!(xmlFileName instanceof HTMLElement)) return;
+			xmlFileName.textContent = file ? `Arquivo selecionado: ${file.name}` : uiStatusMessages.empty.noFileSelected;
+		}
+
+		function assignFileToInput(file) {
+			if (!(fieldXmlFile instanceof HTMLInputElement)) return;
+			const dt = new DataTransfer();
+			dt.items.add(file);
+			fieldXmlFile.files = dt.files;
+			showSelectedFileName(file);
+		}
+
+		fieldXmlFile?.addEventListener('change', () => {
+			if (!(fieldXmlFile instanceof HTMLInputElement)) return;
+			const selected = fieldXmlFile.files?.[0] ?? null;
+			showSelectedFileName(selected);
+		});
+
+		dropzone?.addEventListener('dragover', (event) => {
+			event.preventDefault();
+			if (dropzone instanceof HTMLElement) {
+				dropzone.classList.add('border-[#6D28D9]', 'bg-violet-100/50');
+			}
+		});
+
+		dropzone?.addEventListener('dragleave', () => {
+			if (dropzone instanceof HTMLElement) {
+				dropzone.classList.remove('border-[#6D28D9]', 'bg-violet-100/50');
+			}
+		});
+
+		dropzone?.addEventListener('drop', (event) => {
+			event.preventDefault();
+			if (dropzone instanceof HTMLElement) {
+				dropzone.classList.remove('border-[#6D28D9]', 'bg-violet-100/50');
+			}
+			if (!(event instanceof DragEvent)) return;
+			const file = event.dataTransfer?.files?.[0];
+			if (!file) return;
+			if (!file.name.toLowerCase().endsWith('.xml')) {
+				showErrorBanner(uiStatusMessages.error.invalidXmlFile);
+				return;
+			}
+			hideErrorBanner();
+			assignFileToInput(file);
+		});
+
+		form?.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			if (!(fieldXmlFile instanceof HTMLInputElement) || !fieldXmlFile.files?.length) return;
+			const file = fieldXmlFile.files[0];
+			const destinationCategory =
+				fieldDestinationCategory instanceof HTMLSelectElement
+					? fieldDestinationCategory.value.trim()
+					: '';
+
+			if (btnStart instanceof HTMLButtonElement) btnStart.disabled = true;
+			if (statusEl instanceof HTMLElement) statusEl.textContent = uiStatusMessages.loading.importing;
+			if (jsonStatusEl instanceof HTMLElement) jsonStatusEl.textContent = '';
+			if (logEl instanceof HTMLUListElement) logEl.replaceChildren();
+			hideErrorBanner();
+			setProgress(10, 100);
+			appendLog(uiStatusMessages.import.xmlStartRead);
+			appendLog(uiStatusMessages.import.xmlStartProcess, 'warn');
+			try {
+				const payload = new FormData();
+				payload.set('xmlFile', file);
+				if (destinationCategory) payload.set('destinationCategory', destinationCategory);
+				const { data, error } = await actions.importWordpressPosts(payload);
+				if (error) {
+					const message = error.message || uiStatusMessages.error.unexpected;
+					showErrorBanner(message);
+					appendLog(uiStatusMessages.import.logError(message), 'error');
+				} else if (data) {
+					const importedCount = data.importedCount ?? 0;
+					const skippedCount = data.skippedCount ?? 0;
+					const failedCount = Array.isArray(data.failed) ? data.failed.length : 0;
+					setProgress(100, 100);
+					appendLog(uiStatusMessages.import.xmlFinished(importedCount, skippedCount, failedCount));
+					if (typeof data.downloadedImages === 'number') {
+						appendLog(uiStatusMessages.import.downloadedImages(data.downloadedImages));
+					}
+					if (Array.isArray(data.imported)) {
+						for (const row of data.imported) {
+							const title =
+								row && typeof row === 'object' && 'title' in row
+									? String((row as { title?: unknown }).title ?? '').trim()
+									: '';
+							appendLog(uiStatusMessages.import.importedPost(title));
+						}
+					}
+					if (Array.isArray(data.skipped)) {
+						for (const row of data.skipped) {
+							const slug =
+								row && typeof row === 'object' && 'slug' in row
+									? String((row as { slug?: unknown }).slug ?? '').trim()
+									: '';
+							appendLog(uiStatusMessages.import.skippedDuplicate(slug), 'warn');
+						}
+					}
+					if (Array.isArray(data.failed)) {
+						for (const row of data.failed) {
+							const reason =
+								row && typeof row === 'object' && 'reason' in row
+									? String((row as { reason?: unknown }).reason ?? '').trim()
+									: 'falha desconhecida';
+							appendLog(uiStatusMessages.import.importFailed(reason), 'error');
+						}
+					}
+					if (statusEl instanceof HTMLElement) {
+						statusEl.textContent = uiStatusMessages.import.finishedStatus(importedCount, skippedCount, failedCount);
+					}
+				}
+			} catch (err) {
+				const message = err instanceof Error ? err.message : uiStatusMessages.error.unexpected;
+				showErrorBanner(message);
+				appendLog(uiStatusMessages.import.logError(message), 'error');
+			}
+
+			if (btnStart instanceof HTMLButtonElement) btnStart.disabled = false;
+			if (jsonStatusEl instanceof HTMLElement) jsonStatusEl.textContent = '';
+		});
+
+		/* ─── Importação JSON ───────────────────────────────────────────── */
+		function showJsonSelectedFileName(file) {
+			if (!(jsonFileName instanceof HTMLElement)) return;
+			jsonFileName.textContent = file ? `Arquivo selecionado: ${file.name}` : uiStatusMessages.empty.noFileSelected;
+		}
+
+		function assignJsonFileToInput(file) {
+			if (!(fieldJsonFile instanceof HTMLInputElement)) return;
+			const dt = new DataTransfer();
+			dt.items.add(file);
+			fieldJsonFile.files = dt.files;
+			showJsonSelectedFileName(file);
+		}
+
+		fieldJsonFile?.addEventListener('change', () => {
+			if (!(fieldJsonFile instanceof HTMLInputElement)) return;
+			showJsonSelectedFileName(fieldJsonFile.files?.[0] ?? null);
+		});
+
+		jsonDropzone?.addEventListener('dragover', (event) => {
+			event.preventDefault();
+			if (jsonDropzone instanceof HTMLElement) {
+				jsonDropzone.classList.add('border-emerald-600', 'bg-emerald-100/40');
+			}
+		});
+
+		jsonDropzone?.addEventListener('dragleave', () => {
+			if (jsonDropzone instanceof HTMLElement) {
+				jsonDropzone.classList.remove('border-emerald-600', 'bg-emerald-100/40');
+			}
+		});
+
+		jsonDropzone?.addEventListener('drop', (event) => {
+			event.preventDefault();
+			if (jsonDropzone instanceof HTMLElement) {
+				jsonDropzone.classList.remove('border-emerald-600', 'bg-emerald-100/40');
+			}
+			if (!(event instanceof DragEvent)) return;
+			const file = event.dataTransfer?.files?.[0];
+			if (!file) return;
+			if (!file.name.toLowerCase().endsWith('.json')) {
+				showErrorBanner(uiStatusMessages.error.invalidJsonFile);
+				return;
+			}
+			hideErrorBanner();
+			assignJsonFileToInput(file);
+		});
+
+		jsonForm?.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			if (!(fieldJsonFile instanceof HTMLInputElement) || !fieldJsonFile.files?.length) return;
+			const file = fieldJsonFile.files[0];
+			const destinationCategory =
+				fieldJsonDestinationCategory instanceof HTMLSelectElement
+					? fieldJsonDestinationCategory.value.trim()
+					: '';
+
+			if (btnJsonImport instanceof HTMLButtonElement) btnJsonImport.disabled = true;
+			if (jsonStatusEl instanceof HTMLElement) jsonStatusEl.textContent = uiStatusMessages.loading.validatingAndImporting;
+			if (statusEl instanceof HTMLElement) statusEl.textContent = '';
+			if (logEl instanceof HTMLUListElement) logEl.replaceChildren();
+			hideErrorBanner();
+			setProgress(10, 100);
+			appendLog(uiStatusMessages.import.jsonStartValidate);
+			appendLog(uiStatusMessages.import.jsonStartProcess, 'warn');
+			try {
+				const payload = new FormData();
+				payload.set('jsonFile', file);
+				if (destinationCategory) payload.set('destinationCategory', destinationCategory);
+				const { data, error } = await actions.importBlogJsonBundle(payload);
+				if (error) {
+					const message = error.message || uiStatusMessages.error.unexpected;
+					showErrorBanner(message);
+					appendLog(uiStatusMessages.import.logError(message), 'error');
+				} else if (data) {
+					const importedCount = data.importedCount ?? 0;
+					const skippedCount = data.skippedCount ?? 0;
+					const failedCount = Array.isArray(data.failed) ? data.failed.length : 0;
+					setProgress(100, 100);
+					appendLog(uiStatusMessages.import.jsonFinished(importedCount, skippedCount, failedCount));
+					if (typeof data.downloadedImages === 'number') {
+						appendLog(uiStatusMessages.import.downloadedImages(data.downloadedImages));
+					}
+					if (Array.isArray(data.imported)) {
+						for (const row of data.imported) {
+							const title =
+								row && typeof row === 'object' && 'title' in row
+									? String((row as { title?: unknown }).title ?? '').trim()
+									: '';
+							appendLog(uiStatusMessages.import.importedPost(title));
+						}
+					}
+					if (Array.isArray(data.skipped)) {
+						for (const row of data.skipped) {
+							const slug =
+								row && typeof row === 'object' && 'slug' in row
+									? String((row as { slug?: unknown }).slug ?? '').trim()
+									: '';
+							appendLog(uiStatusMessages.import.skippedDuplicate(slug), 'warn');
+						}
+					}
+					if (Array.isArray(data.failed)) {
+						for (const row of data.failed) {
+							const reason =
+								row && typeof row === 'object' && 'reason' in row
+									? String((row as { reason?: unknown }).reason ?? '').trim()
+									: 'falha desconhecida';
+							const idx =
+								row && typeof row === 'object' && 'index' in row
+									? String((row as { index?: unknown }).index ?? '').trim()
+									: '';
+							appendLog(uiStatusMessages.import.importFailedEntry(idx, reason), 'error');
+						}
+					}
+					if (jsonStatusEl instanceof HTMLElement) {
+						jsonStatusEl.textContent = uiStatusMessages.import.finishedStatus(importedCount, skippedCount, failedCount);
+					}
+				}
+			} catch (err) {
+				const message = err instanceof Error ? err.message : uiStatusMessages.error.unexpected;
+				showErrorBanner(message);
+				appendLog(uiStatusMessages.import.logError(message), 'error');
+			}
+
+			if (btnJsonImport instanceof HTMLButtonElement) btnJsonImport.disabled = false;
+		});
+	</script>
+</DashboardLayout>
+

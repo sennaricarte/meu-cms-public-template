@@ -1,0 +1,488 @@
+---
+import DashboardLayout from '../../layouts/DashboardLayout.astro';
+import { readTags } from '../../lib/taxonomy-data';
+import { uiStatusMessages } from '../../lib/ui-status-messages';
+
+export const prerender = false;
+
+const initialTags = await readTags();
+---
+
+<DashboardLayout title="Tags — Admin" heading="Tags" sectionTitle="Etiquetas">
+	<div class="space-y-6">
+		<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+			<p class="text-sm text-slate-600">
+				Gerencie tags com nome, slug da URL e descrição.
+			</p>
+		</div>
+
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)] lg:items-start lg:gap-8">
+			<!-- Coluna esquerda: formulário -->
+			<section
+				class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+				aria-labelledby="tags-form-heading"
+			>
+				<h2 id="tags-form-heading" class="mb-4 border-b border-slate-100 pb-3 text-lg font-semibold text-slate-900">
+					Adicionar Nova Tag
+				</h2>
+				<form id="tags-form" class="space-y-4">
+					<input type="hidden" id="field-tag-id" value="" />
+
+					<div>
+						<label for="field-tag-name" class="mb-1 block text-sm font-medium text-slate-800">Nome</label>
+						<input
+							id="field-tag-name"
+							type="text"
+							name="name"
+							required
+							maxlength="80"
+							autocomplete="off"
+							class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors focus:border-[#6D28D9] focus:outline-none focus:ring-2 focus:ring-[#6D28D9]/25"
+							placeholder="Ex.: SEO Técnico"
+						/>
+					</div>
+
+					<div>
+						<label for="field-tag-slug" class="mb-1 block text-sm font-medium text-slate-800">Slug</label>
+						<input
+							id="field-tag-slug"
+							type="text"
+							name="slug"
+							required
+							maxlength="80"
+							spellcheck="false"
+							pattern="[\w-]+"
+							title="Letras minúsculas, números e hífens"
+							class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 shadow-sm transition-colors focus:border-[#6D28D9] focus:outline-none focus:ring-2 focus:ring-[#6D28D9]/25"
+							placeholder="seo-tecnico"
+						/>
+						<p class="mt-1 text-xs text-slate-500">
+							Ao criar uma tag, o slug segue o nome enquanto escreves (ex.: «Marketing Digital» →{' '}
+							<code class="rounded bg-slate-100 px-1 font-mono text-[11px] text-slate-800">marketing-digital</code>). Se
+							editares o slug à mão, essa ligação pára até repores com o botão abaixo.
+						</p>
+						<p class="mt-2 text-xs text-slate-500">
+							<button type="button" id="btn-slug-sync" class="font-medium text-[#6D28D9] hover:underline">
+								Gerar slug a partir do nome
+							</button>
+						</p>
+					</div>
+
+					<div>
+						<label for="field-tag-description" class="mb-1 block text-sm font-medium text-slate-800">Descrição</label>
+						<textarea
+							id="field-tag-description"
+							name="description"
+							rows="4"
+							maxlength="5000"
+							class="w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm transition-colors focus:border-[#6D28D9] focus:outline-none focus:ring-2 focus:ring-[#6D28D9]/25"
+							placeholder="Notas internas ou resumo para arquivo público…"
+						></textarea>
+					</div>
+
+					<div class="flex flex-wrap gap-2 pt-1">
+						<button
+							type="submit"
+							id="tags-form-submit"
+							class="inline-flex flex-1 min-w-[8rem] items-center justify-center rounded-xl bg-[#6D28D9] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9] sm:flex-none"
+						>
+							Adicionar tag
+						</button>
+						<button
+							type="button"
+							id="tags-form-cancel"
+							class="inline-flex hidden items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 focus:outline focus:outline-2 focus:outline-[#6D28D9]"
+						>
+							Cancelar edição
+						</button>
+					</div>
+					<p id="tags-form-msg" class="min-h-[1.25rem] text-sm text-slate-600" role="status" aria-live="polite"></p>
+				</form>
+			</section>
+
+			<!-- Coluna direita: tabela -->
+			<section class="rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="tags-table-heading">
+				<div class="border-b border-slate-200 bg-slate-50 px-5 py-4">
+					<h2 id="tags-table-heading" class="text-base font-semibold text-slate-900">Tags existentes</h2>
+					<p id="tags-count" class="mt-1 text-sm tabular-nums text-slate-500">{initialTags.length} etiqueta(s)</p>
+				</div>
+				<div class="border-b border-slate-200 bg-white px-5 py-4">
+					<label for="tags-search" class="block text-sm font-medium text-slate-800">Buscar por tag</label>
+					<input
+						id="tags-search"
+						type="search"
+						class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+						placeholder="Filtrar por nome, slug ou descrição..."
+						autocomplete="off"
+						aria-controls="tags-table-body"
+					/>
+				</div>
+
+				<div class="overflow-x-auto">
+					<table class="min-w-full text-left text-sm">
+						<thead>
+							<tr class="border-b border-slate-200 bg-slate-50">
+								<th scope="col" class="px-6 py-5 text-xs font-semibold uppercase tracking-wider text-slate-800">
+									Nome
+								</th>
+								<th scope="col" class="px-6 py-5 text-xs font-semibold uppercase tracking-wider text-slate-800">
+									Slug
+								</th>
+								<th scope="col" class="hidden px-6 py-5 text-xs font-semibold uppercase tracking-wider text-slate-800 md:table-cell">
+									Descrição
+								</th>
+								<th scope="col" class="w-36 px-6 py-5 text-right text-xs font-semibold uppercase tracking-wider text-slate-800">
+									Ações
+								</th>
+							</tr>
+						</thead>
+						<tbody id="tags-table-body" class="divide-y divide-slate-100 bg-white"></tbody>
+					</table>
+				</div>
+				<p id="tags-empty" class="hidden border-t border-slate-100 px-5 py-12 text-center text-sm text-slate-500">
+					{uiStatusMessages.empty.noTags}
+				</p>
+			</section>
+		</div>
+	</div>
+
+	<!-- Toast -->
+	<div
+		id="tags-toast"
+		class="pointer-events-none fixed bottom-6 right-6 z-[100] max-w-sm translate-y-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 opacity-0 shadow-lg transition-all duration-300 ease-out"
+		role="status"
+		aria-live="polite"
+		aria-atomic="true"
+		hidden
+	>
+	</div>
+
+	<script is:inline define:vars={{ initialTags }}>
+		globalThis.__tagsInitialRows = initialTags;
+	</script>
+
+	<script>
+		import { actions } from 'astro:actions';
+		import { uiStatusMessages } from '../../lib/ui-status-messages';
+
+		type TagRow = {
+			id: string;
+			name: string;
+			slug: string;
+			description: string;
+		};
+
+		const initialTagsRaw = (globalThis as Record<string, unknown>).__tagsInitialRows;
+		const initialRows = initialTagsRaw && Array.isArray(initialTagsRaw) ? (initialTagsRaw as TagRow[]) : [];
+		let tags: TagRow[] = structuredClone(initialRows);
+		let editingId: string | null = null;
+		/** Se true, o utilizador alterou o slug à mão — deixa de sincronizar com o nome. */
+		let slugManualLock = false;
+		/** Evita tratar `input` no slug quando o valor foi definido a partir do nome (alguns browsers). */
+		let syncingSlugFromName = false;
+		let toastTimer = 0;
+
+		const form = document.querySelector('#tags-form');
+		const fieldId = document.querySelector('#field-tag-id');
+		const fieldName = document.querySelector('#field-tag-name');
+		const fieldSlug = document.querySelector('#field-tag-slug');
+		const fieldDesc = document.querySelector('#field-tag-description');
+		const btnSubmit = document.querySelector('#tags-form-submit');
+		const btnCancel = document.querySelector('#tags-form-cancel');
+		const btnSlugSync = document.querySelector('#btn-slug-sync');
+		const formMsg = document.querySelector('#tags-form-msg');
+		const tbody = document.querySelector('#tags-table-body');
+		const tagsEmpty = document.querySelector('#tags-empty');
+		const tagsCount = document.querySelector('#tags-count');
+		const toastEl = document.querySelector('#tags-toast');
+		const formHeading = document.querySelector('#tags-form-heading');
+		const searchInput = document.querySelector('#tags-search');
+		let filterQuery = '';
+
+		function slugify(raw: string): string {
+			return raw
+				.normalize('NFD')
+				.replace(/\p{M}/gu, '')
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '-')
+				.replace(/^-+|-+$/g, '')
+				.slice(0, 80);
+		}
+
+		function normalizeSearch(raw: string): string {
+			return raw
+				.toLowerCase()
+				.normalize('NFD')
+				.replace(/\p{M}/gu, '')
+				.trim();
+		}
+
+		function showToast(message: string, variant: 'success' | 'error' = 'success') {
+			if (!(toastEl instanceof HTMLElement)) return;
+			window.clearTimeout(toastTimer);
+			toastEl.hidden = false;
+			toastEl.textContent = message;
+			toastEl.className =
+				'fixed bottom-6 right-6 z-[100] max-w-sm translate-y-3 rounded-xl border px-4 py-3 text-sm opacity-0 shadow-lg transition-all duration-300 ease-out pointer-events-none';
+			if (variant === 'success') {
+				toastEl.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-900');
+			} else {
+				toastEl.classList.add('border-red-200', 'bg-red-50', 'text-red-900');
+			}
+			requestAnimationFrame(() => {
+				toastEl.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none');
+				toastEl.classList.add('opacity-100', 'translate-y-0');
+			});
+			toastTimer = window.setTimeout(() => {
+				toastEl.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+				toastEl.classList.remove('opacity-100', 'translate-y-0');
+				window.setTimeout(() => {
+					toastEl.hidden = true;
+				}, 320);
+			}, 4200);
+		}
+
+		function setFormMode(edit: boolean) {
+			if (!(btnCancel instanceof HTMLButtonElement) || !(btnSubmit instanceof HTMLButtonElement)) return;
+			btnCancel.classList.toggle('hidden', !edit);
+			btnSubmit.textContent = edit ? 'Guardar alterações' : 'Adicionar tag';
+			if (formHeading instanceof HTMLElement) {
+				formHeading.textContent = edit ? 'Editar Tag' : 'Adicionar Nova Tag';
+			}
+		}
+
+		function clearForm() {
+			editingId = null;
+			slugManualLock = false;
+			if (fieldId instanceof HTMLInputElement) fieldId.value = '';
+			if (fieldName instanceof HTMLInputElement) fieldName.value = '';
+			if (fieldSlug instanceof HTMLInputElement) fieldSlug.value = '';
+			if (fieldDesc instanceof HTMLTextAreaElement) fieldDesc.value = '';
+			setFormMode(false);
+			if (formMsg) formMsg.textContent = '';
+			renderTable();
+		}
+
+		function truncate(s: string, max: number): string {
+			const t = s.trim();
+			if (t.length <= max) return t;
+			return t.slice(0, max - 1) + '…';
+		}
+
+		function renderTable() {
+			if (!(tbody instanceof HTMLTableSectionElement)) return;
+			tbody.replaceChildren();
+			const filteredTags = tags.filter((tag) => {
+				if (!filterQuery.trim()) return true;
+				const haystack = normalizeSearch(`${tag.name} ${tag.slug} ${tag.description ?? ''}`);
+				return haystack.includes(filterQuery);
+			});
+			if (tagsCount) {
+				const total = tags.length;
+				const shown = filteredTags.length;
+				tagsCount.textContent = filterQuery.trim()
+					? `${shown} de ${total} etiqueta(s)`
+					: `${shown} etiqueta(s)`;
+			}
+
+			if (filteredTags.length === 0) {
+				tagsEmpty?.classList.remove('hidden');
+			} else {
+				tagsEmpty?.classList.add('hidden');
+			}
+
+			for (const tag of filteredTags) {
+				const tr = document.createElement('tr');
+				const active = editingId === tag.id;
+				tr.className =
+					'transition-colors hover:bg-slate-50/90 ' +
+					(active ? 'bg-[#F5F3FF] ring-1 ring-inset ring-[#6D28D9]/35' : '');
+				tr.dataset.tagId = tag.id;
+
+				const descPreview = truncate(tag.description ?? '', 80);
+
+				tr.innerHTML = `
+					<td class="px-6 py-7 align-middle font-medium text-slate-900">${escapeHtml(tag.name)}</td>
+					<td class="px-6 py-7 align-middle font-mono text-xs text-slate-700">${escapeHtml(tag.slug)}</td>
+					<td class="hidden px-6 py-7 align-middle text-slate-600 md:table-cell" title="${escapeAttr(tag.description ?? '')}">${escapeHtml(descPreview)}</td>
+					<td class="px-6 py-7 align-middle">
+						<div class="flex justify-end gap-1">
+							<button type="button" class="tag-btn-edit inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-medium text-[#6D28D9] transition-colors hover:bg-[#6D28D9]/10 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]" data-id="${escapeAttr(tag.id)}">
+								Editar
+							</button>
+							<button type="button" class="tag-btn-del inline-flex h-9 items-center justify-center rounded-lg px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-red-500" data-id="${escapeAttr(tag.id)}">
+								Excluir
+							</button>
+						</div>
+					</td>
+				`;
+				tbody.appendChild(tr);
+			}
+
+			for (const b of tbody.querySelectorAll('.tag-btn-edit')) {
+				b.addEventListener('click', onEditClick);
+			}
+			for (const b of tbody.querySelectorAll('.tag-btn-del')) {
+				b.addEventListener('click', onDeleteClick);
+			}
+		}
+
+		function escapeHtml(s: string): string {
+			const d = document.createElement('div');
+			d.textContent = s;
+			return d.innerHTML;
+		}
+
+		function escapeAttr(s: string): string {
+			return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+		}
+
+		function onEditClick(ev: Event) {
+			const btn = ev.currentTarget;
+			if (!(btn instanceof HTMLButtonElement)) return;
+			const id = btn.getAttribute('data-id');
+			if (!id) return;
+			const tag = tags.find((t) => t.id === id);
+			if (!tag) return;
+			editingId = id;
+			slugManualLock = true;
+			if (fieldId instanceof HTMLInputElement) fieldId.value = tag.id;
+			if (fieldName instanceof HTMLInputElement) fieldName.value = tag.name;
+			if (fieldSlug instanceof HTMLInputElement) fieldSlug.value = tag.slug;
+			if (fieldDesc instanceof HTMLTextAreaElement) fieldDesc.value = tag.description ?? '';
+			setFormMode(true);
+			renderTable();
+			fieldName?.focus();
+		}
+
+		async function onDeleteClick(ev: Event) {
+			const btn = ev.currentTarget;
+			if (!(btn instanceof HTMLButtonElement)) return;
+			const id = btn.getAttribute('data-id');
+			if (!id) return;
+			const tag = tags.find((t) => t.id === id);
+			if (!tag) return;
+			if (!confirm(uiStatusMessages.confirm.deleteTag(tag.name))) return;
+
+			const { data, error } = await actions.manageTags({ kind: 'delete', id });
+			if (error) {
+				showToast(error.message, 'error');
+				return;
+			}
+			if (data?.tags) {
+				tags = data.tags as TagRow[];
+			}
+			if (editingId === id) clearForm();
+			else renderTable();
+			showToast(`Tag «${tag.name}» removida.`, 'success');
+		}
+
+		function applySlugFromName() {
+			if (editingId || slugManualLock) return;
+			if (!(fieldName instanceof HTMLInputElement) || !(fieldSlug instanceof HTMLInputElement)) return;
+			syncingSlugFromName = true;
+			fieldSlug.value = slugify(fieldName.value);
+			queueMicrotask(() => {
+				syncingSlugFromName = false;
+			});
+		}
+
+		btnSlugSync?.addEventListener('click', () => {
+			if (!(fieldName instanceof HTMLInputElement) || !(fieldSlug instanceof HTMLInputElement)) return;
+			slugManualLock = false;
+			syncingSlugFromName = true;
+			fieldSlug.value = slugify(fieldName.value);
+			queueMicrotask(() => {
+				syncingSlugFromName = false;
+			});
+		});
+
+		fieldSlug?.addEventListener('input', () => {
+			if (syncingSlugFromName || editingId) return;
+			slugManualLock = true;
+		});
+
+		btnCancel?.addEventListener('click', () => clearForm());
+
+		form?.addEventListener('submit', async (e) => {
+			e.preventDefault();
+			if (
+				!(fieldName instanceof HTMLInputElement) ||
+				!(fieldSlug instanceof HTMLInputElement) ||
+				!(fieldDesc instanceof HTMLTextAreaElement)
+			)
+				return;
+
+			const name = fieldName.value.trim();
+			const slug = fieldSlug.value.trim().toLowerCase();
+			const description = fieldDesc.value.trim();
+			if (!name || !slug) {
+				if (formMsg) formMsg.textContent = 'Preenche nome e slug.';
+				return;
+			}
+			if (formMsg) formMsg.textContent = '';
+
+			const idVal = fieldId instanceof HTMLInputElement ? fieldId.value.trim() : '';
+
+			try {
+				if (idVal && editingId) {
+					const { data, error } = await actions.manageTags({
+						kind: 'update',
+						id: idVal,
+						name,
+						slug,
+						description,
+					});
+					if (error) {
+						showToast(error.message, 'error');
+						return;
+					}
+					if (
+						data &&
+						'updated' in data &&
+						data.updated === false &&
+						'duplicateSlug' in data &&
+						(data as { duplicateSlug?: boolean }).duplicateSlug
+					) {
+						showToast(uiStatusMessages.error.duplicateOtherTagSlug, 'error');
+						return;
+					}
+					if (data?.tags) tags = data.tags as TagRow[];
+					showToast(uiStatusMessages.success.tagUpdated, 'success');
+					clearForm();
+					return;
+				}
+
+				const { data, error } = await actions.manageTags({
+					kind: 'create',
+					name,
+					slug,
+					description,
+				});
+				if (error) {
+					showToast(error.message, 'error');
+					return;
+				}
+				if (data && 'added' in data && data.added === false) {
+					showToast(uiStatusMessages.error.duplicateTagSlug, 'error');
+					return;
+				}
+				if (data?.tags) tags = data.tags as TagRow[];
+				showToast(uiStatusMessages.success.tagCreated, 'success');
+				clearForm();
+			} catch (err) {
+				showToast(err instanceof Error ? err.message : uiStatusMessages.error.saveGeneric, 'error');
+			}
+		});
+
+		fieldName?.addEventListener('input', applySlugFromName);
+		fieldName?.addEventListener('compositionend', applySlugFromName);
+		searchInput?.addEventListener('input', () => {
+			if (!(searchInput instanceof HTMLInputElement)) return;
+			filterQuery = normalizeSearch(searchInput.value);
+			renderTable();
+		});
+
+		renderTable();
+	</script>
+</DashboardLayout>

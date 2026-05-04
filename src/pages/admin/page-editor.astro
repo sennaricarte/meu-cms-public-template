@@ -2,6 +2,7 @@
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
 import { SAFE_PAGES_REL_PATH } from './editor-server';
 import { loadStaticPageForEditor } from '../../lib/pages-editor-load';
+import { uiStatusMessages } from '../../lib/ui-status-messages';
 
 export const prerender = false;
 
@@ -43,25 +44,30 @@ const pageExtDefault =
 <DashboardLayout
 	title={initialPage ? 'Editar página' : 'Nova página'}
 	heading={initialPage ? 'Editar página estática' : 'Nova página estática'}
+	sectionTitle="Páginas estáticas"
+	sectionActionLabel="Adicionar Novo"
+	sectionActionHref="/admin/page-editor"
 >
 	<div class="space-y-6">
 		{
 			loadError && (
-				<div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+				<div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 shadow-sm" role="alert">
 					{loadError}
 				</div>
 			)
 		}
-		<p class="text-sm text-neutral-600">
-			Gravação em <code class="text-xs bg-white px-1 rounded border border-neutral-200">src/content/pages/</code>. O slug define o caminho do ficheiro (ex.:
-			<code class="text-xs">contactos</code> → <code class="text-xs">contactos.md</code>,
-			<code class="text-xs">legal/privacidade</code> → <code class="text-xs">legal/privacidade.md</code>).
-		</p>
+		<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+			<p class="text-sm text-slate-600">
+				O slug define o URL da página (ex.:
+				<code class="text-xs text-slate-800">contatos</code> -> <code class="text-xs text-slate-800">/contatos/</code>,
+				<code class="text-xs text-slate-800">legal/privacidade</code> -> <code class="text-xs text-slate-800">/legal/privacidade/</code>).
+			</p>
+		</div>
 
 		<form id="page-editor-form" class="space-y-8">
 			<input type="hidden" id="field-page-ext" value={pageExtDefault} />
 			<div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)] gap-8 items-start">
-				<div class="min-w-0 space-y-6">
+				<div class="min-w-0 space-y-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
 					<div>
 						<label for="field-title" class="block font-medium text-neutral-800">Título da página</label>
 						<p class="text-xs text-neutral-500 mt-0.5 mb-1">Aparece como H1 na página pública.</p>
@@ -82,17 +88,33 @@ const pageExtDefault =
 					</div>
 
 					<!-- Upload de Imagem com Preview -->
-					<div class="border-2 border-dashed border-neutral-300 p-4 rounded text-center bg-white">
-						<label for="image-upload" class="block font-medium mb-2">Imagem de destaque (enviada como WebP)</label>
-						<input
-							id="image-upload"
-							type="file"
-							accept="image/jpeg,image/png,image/webp"
-							class="mb-4"
-							aria-describedby="upload-hint"
-						/>
+					<div class="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/60 p-5 text-center">
+						<p class="font-medium mb-1">Imagem de destaque</p>
+						<p id="upload-hint" class="text-sm text-neutral-500 mb-3">
+							Envie um ficheiro novo ou escolha uma imagem já na{' '}
+							<a href="/admin/media" class="font-medium text-[#6D28D9] underline hover:text-[#5b21b6]"
+								>Central de mídia</a
+							>
+							(WebP em <code class="text-xs bg-white px-1 rounded border border-neutral-200">public/uploads/</code>).
+						</p>
+						<div class="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center mb-4">
+							<label class="sr-only" for="image-upload">Carregar imagem do computador</label>
+							<input
+								id="image-upload"
+								type="file"
+								accept="image/jpeg,image/png,image/webp"
+								class="text-sm text-left sm:flex-1 file:mr-3 file:rounded-lg file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-neutral-800 hover:file:bg-neutral-50"
+								aria-describedby="upload-hint"
+							/>
+							<button
+								type="button"
+								id="hero-open-media"
+								class="rounded-xl border border-[#6D28D9]/30 bg-violet-50 px-4 py-2.5 text-sm font-semibold text-[#5b21b6] shadow-sm transition-colors hover:bg-violet-100 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
+							>
+								Escolher da biblioteca
+							</button>
+						</div>
 						<input type="hidden" name="heroImage" id="heroImage-url" value="" />
-						<p id="upload-hint" class="text-sm text-neutral-500 mb-2">Apenas JPEG, PNG ou WebP. Requer sessão admin.</p>
 						<div id="preview-container" class="hidden">
 							<img id="image-preview" src="" alt="Pré-visualização da imagem de destaque" class="max-h-48 mx-auto rounded" width="800" height="450" />
 						</div>
@@ -113,7 +135,7 @@ const pageExtDefault =
 			<!-- Área de Conteúdo — WYSIWYG nativo (document.execCommand) -->
 			<div class="space-y-2">
 				<span id="field-content-label" class="block font-medium">Conteúdo</span>
-				<div class="rounded-lg border border-neutral-300 overflow-hidden bg-white shadow-sm">
+				<div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 					<div
 						id="wysiwyg-toolbar"
 						class="flex flex-wrap items-center gap-1 p-2 border-b border-neutral-200 bg-neutral-50"
@@ -305,7 +327,7 @@ const pageExtDefault =
 				</div>
 				<textarea id="field-content" name="content" required class="sr-only" tabindex="-1" aria-hidden="true"></textarea>
 				<p class="text-sm text-neutral-500">
-					Edição visual: o HTML é guardado no corpo do ficheiro em <code class="text-xs bg-neutral-50 px-1 rounded">src/content/pages/</code>.
+					Edição visual: o conteúdo HTML é guardado automaticamente no corpo da página.
 				</p>
 			</div>
 			<style>
@@ -348,22 +370,23 @@ const pageExtDefault =
 					margin: 0.35rem 0;
 				}
 				.wysiwyg-editor figure.wysiwyg-youtube-embed {
-					margin: 1rem 0;
+					display: block;
+					width: 100%;
 					max-width: 100%;
+					margin: 1rem auto;
 				}
 				.wysiwyg-editor .wysiwyg-youtube-inner {
 					position: relative;
+					width: 100%;
 					padding-bottom: 56.25%;
 					height: 0;
 					overflow: hidden;
-					max-width: 100%;
 					border-radius: 8px;
 					background: #0f172a;
 				}
 				.wysiwyg-editor .wysiwyg-youtube-inner iframe {
 					position: absolute;
-					top: 0;
-					left: 0;
+					inset: 0;
 					width: 100%;
 					height: 100%;
 					border: 0;
@@ -426,17 +449,17 @@ const pageExtDefault =
 
 					<button
 						type="submit"
-						class="w-full sm:w-auto bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600 font-medium"
+						class="w-full rounded-xl bg-[#6D28D9] px-6 py-2.5 font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9] sm:w-auto"
 					>
 						Guardar página
 					</button>
 				</div>
 
 				<aside
-					class="rounded-xl border border-neutral-200 bg-neutral-50 p-4 space-y-5 xl:sticky xl:top-6 self-start shadow-sm"
+					class="space-y-5 self-start rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 xl:sticky xl:top-6"
 					aria-labelledby="seo-aside-heading"
 				>
-					<h2 id="seo-aside-heading" class="text-sm font-semibold text-neutral-900 border-b border-neutral-200 pb-2">
+					<h2 id="seo-aside-heading" class="border-b border-slate-200 pb-2 text-sm font-semibold text-neutral-900">
 						Configurações de SEO
 					</h2>
 					<p class="text-xs text-neutral-600 leading-relaxed">
@@ -492,8 +515,7 @@ const pageExtDefault =
 							aria-describedby="slug-hint"
 						/>
 						<p id="slug-hint" class="text-xs text-neutral-500 mt-1">
-							Caminho do ficheiro em <code class="text-xs bg-white px-1 rounded border border-neutral-200">src/content/pages/</code> (sem extensão).
-							Podes usar subpastas: <code class="text-xs">legal/privacidade</code>. Extensão:
+							O slug define o URL da página e pode usar subpastas (ex.: <code class="text-xs">legal/privacidade</code>). Extensão:
 							<code class="text-xs" id="slug-ext-hint">{pageExtDefault}</code>. Sugestão automática a partir do título até editares o slug.
 						</p>
 					</div>
@@ -567,8 +589,8 @@ const pageExtDefault =
 						</button>
 					</div>
 					<div id="media-modal-body" class="p-4 overflow-y-auto flex-1">
-						<p id="media-modal-loading" class="text-sm text-neutral-500">A carregar…</p>
-						<p id="media-modal-empty" class="hidden text-sm text-neutral-500">Nenhuma imagem encontrada em <code class="text-xs bg-neutral-100 px-1 rounded">public/uploads/</code>.</p>
+						<p id="media-modal-loading" class="text-sm text-neutral-500">{uiStatusMessages.loading.loadingImages}</p>
+						<p id="media-modal-empty" class="hidden text-sm text-neutral-500">Nenhuma imagem disponível no momento.</p>
 						<div id="media-modal-grid" class="hidden grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"></div>
 					</div>
 				</div>
@@ -638,7 +660,7 @@ const pageExtDefault =
 							</button>
 							<button
 								type="submit"
-								class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-blue-600"
+								class="rounded-xl bg-[#6D28D9] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
 							>
 								Aplicar link
 							</button>
@@ -650,11 +672,36 @@ const pageExtDefault =
 		</form>
 	</div>
 
-	<script define:vars={{ initialPayload }}>
+	<script is:inline define:vars={{ initialPayload }}>
+		globalThis.__pageEditorInitialPayload = initialPayload;
+	</script>
+
+	<script>
 		import { actions } from 'astro:actions';
+		import { uiStatusMessages } from '../../lib/ui-status-messages';
 
 		const SAFE_PAGES_REL_PATH_JS =
 			/^(?:[a-zA-Z0-9_-]+\/)*[a-zA-Z0-9_-]+\.(?:md|mdx)$/;
+
+		type PageEditorInitialPayload = {
+			relativePath: string;
+			slugBase: string;
+			ext: '.md' | '.mdx';
+			title: string;
+			seoTitle?: string;
+			description: string;
+			draft: boolean;
+			heroImage?: string;
+			canonical?: string;
+			body: string;
+		};
+		const initialPayloadRaw = (globalThis as Record<string, unknown>).__pageEditorInitialPayload;
+		const initialPayload: PageEditorInitialPayload | null =
+			initialPayloadRaw !== null &&
+			initialPayloadRaw !== undefined &&
+			typeof initialPayloadRaw === 'object'
+				? (initialPayloadRaw as PageEditorInitialPayload)
+				: null;
 
 		const fileInput = document.querySelector('#image-upload');
 		const previewContainer = document.querySelector('#preview-container');
@@ -1303,13 +1350,33 @@ const pageExtDefault =
 			const btnYoutube = document.querySelector('#toolbar-insert-youtube');
 			const btnMedia = document.querySelector('#toolbar-open-media');
 			const mediaModal = document.querySelector('#media-modal');
+			const mediaModalTitleEl = document.querySelector('#media-modal-title');
 			const mediaModalClose = document.querySelector('#media-modal-close');
 			const mediaGrid = document.querySelector('#media-modal-grid');
 			const mediaLoading = document.querySelector('#media-modal-loading');
 			const mediaEmpty = document.querySelector('#media-modal-empty');
 
-			function openMediaModal() {
+			const MEDIA_MODAL_TITLE_DEFAULT = 'Imagens em /uploads';
+			const MEDIA_MODAL_TITLE_HERO = 'Escolher imagem de destaque';
+			let mediaModalPurpose: 'wysiwyg' | 'hero' = 'wysiwyg';
+
+			function applyHeroFromLibrary(url: string, meta?: { alt?: string }) {
+				if (heroHidden instanceof HTMLInputElement) heroHidden.value = url;
+				if (imagePreview instanceof HTMLImageElement) {
+					imagePreview.src = url;
+					imagePreview.alt =
+						meta?.alt?.trim() || 'Pré-visualização da imagem de destaque';
+				}
+				previewContainer?.classList.remove('hidden');
+			}
+
+			function openMediaModal(purpose: 'wysiwyg' | 'hero' = 'wysiwyg') {
 				if (!(mediaModal instanceof HTMLElement)) return;
+				mediaModalPurpose = purpose;
+				if (mediaModalTitleEl instanceof HTMLElement) {
+					mediaModalTitleEl.textContent =
+						purpose === 'hero' ? MEDIA_MODAL_TITLE_HERO : MEDIA_MODAL_TITLE_DEFAULT;
+				}
 				mediaModal.classList.remove('hidden');
 				mediaModal.setAttribute('aria-hidden', 'false');
 				mediaModalClose?.focus();
@@ -1318,6 +1385,10 @@ const pageExtDefault =
 
 			function closeMediaModal() {
 				if (!(mediaModal instanceof HTMLElement)) return;
+				mediaModalPurpose = 'wysiwyg';
+				if (mediaModalTitleEl instanceof HTMLElement) {
+					mediaModalTitleEl.textContent = MEDIA_MODAL_TITLE_DEFAULT;
+				}
 				mediaModal.classList.add('hidden');
 				mediaModal.setAttribute('aria-hidden', 'true');
 				editor.focus();
@@ -1338,7 +1409,10 @@ const pageExtDefault =
 
 				try {
 					const res = await fetch('/api/list-uploads', { credentials: 'same-origin' });
-					const data = (await res.json()) as { images?: { url: string; name: string }[]; error?: string };
+					const data = (await res.json()) as {
+						images?: { url: string; name: string; alt?: string; title?: string }[];
+						error?: string;
+					};
 					mediaLoading.classList.add('hidden');
 					if (!res.ok) {
 						mediaEmpty.textContent = data.error ?? 'Não foi possível listar as imagens.';
@@ -1351,12 +1425,18 @@ const pageExtDefault =
 						return;
 					}
 					mediaGrid.classList.remove('hidden');
-					for (const { url, name } of images) {
+					for (const row of images) {
+						const { url, name } = row;
 						const btn = document.createElement('button');
 						btn.type = 'button';
 						btn.className =
 							'relative aspect-square rounded-lg overflow-hidden border border-neutral-200 hover:border-blue-500 focus:outline focus:outline-2 focus:outline-blue-600 bg-neutral-50 group';
-						btn.setAttribute('aria-label', `Inserir imagem ${name}`);
+						btn.setAttribute(
+							'aria-label',
+							mediaModalPurpose === 'hero'
+								? `Usar como imagem de destaque: ${name}`
+								: `Inserir imagem ${name}`,
+						);
 						const img = document.createElement('img');
 						img.src = url;
 						img.alt = '';
@@ -1365,7 +1445,17 @@ const pageExtDefault =
 						img.className = 'w-full h-full object-cover';
 						btn.appendChild(img);
 						btn.addEventListener('click', () => {
-							const block = `<p><img class="wysiwyg-inserted-img" src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(name)}" loading="lazy" decoding="async" /></p>`;
+							if (mediaModalPurpose === 'hero') {
+								applyHeroFromLibrary(url, row);
+								closeMediaModal();
+								return;
+							}
+							const dot = name.lastIndexOf('.');
+							const fallbackAlt = dot > 0 ? name.slice(0, dot) : name;
+							const altText = row.alt?.trim() || fallbackAlt;
+							const titleAttr = row.title?.trim();
+							const titlePart = titleAttr ? ` title="${escapeHtmlAttr(titleAttr)}"` : '';
+							const block = `<p><img class="wysiwyg-inserted-img" src="${escapeHtmlAttr(url)}" alt="${escapeHtmlAttr(altText)}"${titlePart} loading="lazy" decoding="async" /></p>`;
 							insertHtmlAtCaret(editor, block, lastCaretRange);
 							closeMediaModal();
 						});
@@ -1373,9 +1463,83 @@ const pageExtDefault =
 					}
 				} catch {
 					mediaLoading.classList.add('hidden');
-					mediaEmpty.textContent = 'Erro de rede ao listar imagens.';
+					mediaEmpty.textContent = uiStatusMessages.error.loadImages;
 					mediaEmpty.classList.remove('hidden');
 				}
+			}
+
+			/** iframes via innerHTML são eliminados em contenteditable — DOM + modo HTML. */
+			function insertYoutubeEmbed(videoId: string) {
+				const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}`;
+				const htmlBlock = `<figure class="wysiwyg-youtube-embed" contenteditable="false" data-youtube-id="${videoId}"><div class="wysiwyg-youtube-inner"><iframe src="${embedUrl}" title="YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></figure><p><br></p>`;
+
+				const sourceView = document.querySelector('#wysiwyg-source-view');
+				if (sourceView instanceof HTMLTextAreaElement && !sourceView.classList.contains('hidden')) {
+					const start = sourceView.selectionStart ?? sourceView.value.length;
+					const end = sourceView.selectionEnd ?? start;
+					const before = sourceView.value.slice(0, start);
+					const after = sourceView.value.slice(end);
+					sourceView.value = before + htmlBlock + after;
+					const pos = start + htmlBlock.length;
+					sourceView.selectionStart = sourceView.selectionEnd = pos;
+					sourceView.focus();
+					syncWysiwygToTextarea();
+					updateWysiwygMetrics();
+					return;
+				}
+
+				editor.focus();
+				let range: Range;
+				if (lastCaretRange && rangeInsideEditor(editor, lastCaretRange)) {
+					range = lastCaretRange.cloneRange();
+				} else {
+					range = document.createRange();
+					range.selectNodeContents(editor);
+					range.collapse(false);
+				}
+
+				const figure = document.createElement('figure');
+				figure.className = 'wysiwyg-youtube-embed';
+				figure.setAttribute('contenteditable', 'false');
+				figure.dataset.youtubeId = videoId;
+
+				const inner = document.createElement('div');
+				inner.className = 'wysiwyg-youtube-inner';
+
+				const iframe = document.createElement('iframe');
+				iframe.src = embedUrl;
+				iframe.title = 'YouTube';
+				iframe.setAttribute(
+					'allow',
+					'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+				);
+				iframe.setAttribute('allowfullscreen', '');
+				iframe.loading = 'lazy';
+				iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+
+				inner.appendChild(iframe);
+				figure.appendChild(inner);
+
+				const tail = document.createElement('p');
+				tail.innerHTML = '<br>';
+
+				const frag = document.createDocumentFragment();
+				frag.appendChild(figure);
+				frag.appendChild(tail);
+
+				range.deleteContents();
+				range.insertNode(frag);
+
+				if (tail.parentNode) {
+					range.setStart(tail, 0);
+					range.collapse(true);
+					const sel = window.getSelection();
+					sel?.removeAllRanges();
+					sel?.addRange(range);
+				}
+
+				syncWysiwygToTextarea();
+				updateWysiwygMetrics();
 			}
 
 			btnYoutube?.addEventListener('mousedown', () => {
@@ -1390,9 +1554,7 @@ const pageExtDefault =
 					window.alert('URL do YouTube inválida. Use um link de um vídeo (watch, youtu.be, embed ou Shorts).');
 					return;
 				}
-				const embed = `https://www.youtube-nocookie.com/embed/${id}`;
-				const html = `<figure class="wysiwyg-youtube-embed" contenteditable="false" data-youtube-id="${id}"><div class="wysiwyg-youtube-inner"><iframe src="${embed}" title="YouTube" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></figure><p><br></p>`;
-				insertHtmlAtCaret(editor, html, lastCaretRange);
+				insertYoutubeEmbed(id);
 			});
 
 			btnMedia?.addEventListener('mousedown', () => {
@@ -1400,7 +1562,12 @@ const pageExtDefault =
 			});
 			btnMedia?.addEventListener('click', (e) => {
 				e.preventDefault();
-				openMediaModal();
+				openMediaModal('wysiwyg');
+			});
+
+			document.querySelector('#hero-open-media')?.addEventListener('click', (e) => {
+				e.preventDefault();
+				openMediaModal('hero');
 			});
 
 			mediaModalClose?.addEventListener('click', () => closeMediaModal());
@@ -1692,7 +1859,7 @@ const pageExtDefault =
 				const data = await response.json();
 
 				if (!response.ok) {
-					alert(data.error ?? 'Falha no upload.');
+					alert(data.error ?? uiStatusMessages.error.upload);
 					return;
 				}
 
@@ -1704,7 +1871,7 @@ const pageExtDefault =
 				}
 				previewContainer?.classList.remove('hidden');
 			} catch (err) {
-				alert(err instanceof Error ? err.message : 'Erro de rede no upload.');
+				alert(err instanceof Error ? err.message : uiStatusMessages.error.upload);
 			}
 		});
 
@@ -1854,7 +2021,7 @@ const pageExtDefault =
 				return;
 			}
 			currentRelativePath = data.relativePath;
-			window.alert(`Página gravada com sucesso: ${data.relativePath}`);
+			window.alert(uiStatusMessages.success.pageSaved(data.relativePath));
 			resetEditorAfterSave({ isNewPage: !initialPayload });
 		});
 	</script>

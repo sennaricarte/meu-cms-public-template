@@ -1,66 +1,43 @@
 ---
 import DashboardLayout from '../../layouts/DashboardLayout.astro';
-import { readCategories, readTags } from '../../lib/taxonomy-data';
+import { readCategories } from '../../lib/taxonomy-data';
+import { uiStatusMessages } from '../../lib/ui-status-messages';
 
 export const prerender = false;
 
 const initialCategories = await readCategories();
-const initialTags = await readTags();
 ---
 
-<DashboardLayout title="Taxonomias — Admin" heading="Taxonomias">
+<DashboardLayout
+	title="Categorias — Admin"
+	heading="Categorias"
+	sectionTitle="Categorias do blog"
+	sectionActionLabel="Adicionar Novo"
+	sectionActionHref="#taxonomy-add-form"
+>
 	<div class="space-y-6">
-			<p class="text-sm text-neutral-600 mb-6">
-				Gira categorias e tags como no WordPress. Os dados ficam em
-				<code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200 text-neutral-800">src/data/categories.json</code>
-				e
-				<code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200 text-neutral-800">tags.json</code>.
-				Nas categorias, usa <strong class="font-medium text-neutral-800">Editar SEO</strong> para o título e descrição das páginas de arquivo em{' '}
-				<code class="text-xs bg-white px-1.5 py-0.5 rounded border border-neutral-200 text-neutral-800">/blog/categoria/…</code>.
-			</p>
-
-			<!-- Tabs estilo WordPress (segmentos ligados) -->
-			<div class="relative z-[2] mb-0 flex flex-wrap gap-0" role="tablist" aria-label="Tipo de taxonomia">
-				<button
-					type="button"
-					id="tab-categories"
-					role="tab"
-					aria-selected="true"
-					aria-controls="panel-taxonomy"
-					class="taxonomy-tab rounded-t-md border border-b-0 border-neutral-300 bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 shadow-[inset_0_-1px_0_0_white] relative z-[1]"
-				>
-					Categorias
-				</button>
-				<button
-					type="button"
-					id="tab-tags"
-					role="tab"
-					aria-selected="false"
-					aria-controls="panel-taxonomy"
-					class="taxonomy-tab relative z-[1] rounded-t-md border border-transparent border-b-neutral-300 bg-[#e8e8e8] px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-200 hover:text-neutral-900"
-				>
-					Tags
-				</button>
+			<div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+				<p class="text-sm text-slate-600">
+					Gerencie aqui as categorias do blog.
+					Para <strong class="font-medium text-slate-800">tags</strong>, usa a página{' '}
+					<a href="/admin/tags" class="font-medium text-[#6D28D9] underline hover:text-[#5b21b6]">Tags</a>. Usa{' '}
+					<strong class="font-medium text-slate-800">Editar SEO</strong> para o título e descrição das páginas de arquivo em{' '}
+					<code class="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-800">/blog/categoria/…</code>.
+				</p>
 			</div>
 
-			<div
-				id="panel-taxonomy"
-				role="tabpanel"
-				class="rounded-b-lg rounded-tr-lg border border-neutral-300 bg-white p-6 shadow-sm -mt-px"
-			>
+			<div id="panel-taxonomy" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
 				<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-start">
 					<!-- Coluna esquerda: formulário -->
-					<section class="space-y-4" aria-labelledby="form-taxonomy-heading">
-						<div class="border-b border-neutral-200 pb-3">
-							<h2 id="form-taxonomy-heading" class="text-lg font-semibold text-neutral-900">
-								Adicionar nova <span id="form-mode-label">categoria</span>
-							</h2>
+					<section class="space-y-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" aria-labelledby="form-taxonomy-heading">
+						<div class="border-b border-slate-200 pb-3">
+							<h2 id="form-taxonomy-heading" class="text-lg font-semibold text-slate-900">Adicionar nova categoria</h2>
 							<p class="text-xs text-neutral-500 mt-1">
 								O slug é usado na URL. Nas <strong class="font-medium text-neutral-700">categorias</strong>, o slug acompanha o nome enquanto escreves (podes editar o slug à parte).
 							</p>
 						</div>
 
-						<form id="taxonomy-add-form" class="space-y-5">
+						<form id="taxonomy-add-form" class="space-y-5" novalidate>
 							<div>
 								<label for="field-t-name" class="block text-sm font-semibold text-neutral-900 mb-1">Nome</label>
 								<input
@@ -86,13 +63,16 @@ const initialTags = await readTags();
 										maxlength="80"
 										spellcheck="false"
 										autocomplete="off"
-										pattern="[\w-]+"
-										title="Letras minúsculas, números e hífens"
 										class="flex-1 min-w-0 border-0 bg-white px-3 py-2 text-sm font-mono text-neutral-900 focus:ring-0 focus:outline-none"
 										placeholder="tecnologia"
+										aria-describedby="slug-help-default"
 									/>
 								</div>
-								<p class="text-xs text-neutral-500 mt-1.5">
+								<p class="text-xs text-neutral-500 mt-1.5 space-y-1.5">
+									<span id="slug-help-default" class="block text-neutral-500">
+										O slug segue o nome enquanto escreves (ex.: «Marketing Digital» →{' '}
+										<code class="rounded bg-neutral-100 px-1 font-mono text-[11px] text-neutral-800">marketing-digital</code>). Se editares o slug à mão, essa ligação pára até repores com o botão abaixo.
+									</span>
 									<button
 										type="button"
 										id="btn-resync-slug"
@@ -101,52 +81,70 @@ const initialTags = await readTags();
 									>
 										Repor slug a partir do nome
 									</button>
-									<span id="slug-help-default" class="text-neutral-500">
-										Categorias: preenchimento automático ao digitar o nome.
-									</span>
 								</p>
+							</div>
+							<div>
+								<label for="field-t-description" class="block text-sm font-semibold text-neutral-900 mb-1">Descrição</label>
+								<textarea
+									id="field-t-description"
+									name="description"
+									rows="3"
+									maxlength="5000"
+									class="wp-input w-full resize-y rounded border border-neutral-400 px-3 py-2 text-sm shadow-inner bg-white focus:border-[#2271b1] focus:ring-1 focus:ring-[#2271b1] focus:outline-none"
+									placeholder="Notas internas ou resumo para arquivo público..."
+								></textarea>
 							</div>
 							<button
 								type="submit"
-								class="inline-flex items-center justify-center rounded border border-[#2271b1] bg-[#2271b1] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#135e96] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#2271b1]"
+								id="taxonomy-submit-btn"
+								class="inline-flex items-center justify-center rounded-xl bg-[#6D28D9] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9] disabled:cursor-not-allowed disabled:opacity-70"
 							>
-								Adicionar <span id="submit-mode-label" class="ml-1">categoria</span>
+								Adicionar categoria
 							</button>
 						</form>
-						<p id="taxonomy-form-msg" class="text-sm min-h-[1.25rem]" role="status" aria-live="polite"></p>
+						<p id="taxonomy-form-msg" class="text-sm min-h-[1.25rem] text-neutral-600" role="status" aria-live="polite"></p>
 					</section>
 
 					<!-- Coluna direita: tabela estilo lista WP -->
-					<section class="rounded border border-neutral-300 overflow-hidden bg-white" aria-labelledby="table-taxonomy-heading">
-						<div class="border-b border-neutral-300 bg-[#f6f7f7] px-4 py-2.5 flex items-center justify-between gap-2">
-							<h2 id="table-taxonomy-heading" class="text-sm font-semibold text-neutral-900">
-								Todas as <span id="table-mode-label">categorias</span>
-							</h2>
-							<span class="text-xs text-neutral-500 tabular-nums" id="taxonomy-count">0 itens</span>
+					<section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm" aria-labelledby="table-taxonomy-heading">
+						<div class="flex items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4">
+							<h2 id="table-taxonomy-heading" class="text-sm font-semibold text-slate-900">Todas as categorias</h2>
+							<span class="text-xs tabular-nums text-slate-500" id="taxonomy-count">0 itens</span>
+						</div>
+						<div class="border-b border-slate-200 bg-white px-5 py-4">
+							<label for="taxonomy-search" class="block text-sm font-medium text-slate-800">Buscar por categoria</label>
+							<input
+								id="taxonomy-search"
+								type="search"
+								class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"
+								placeholder="Filtrar por nome, slug ou descrição..."
+								autocomplete="off"
+								aria-controls="taxonomy-main-table"
+							/>
 						</div>
 						<div class="overflow-x-auto">
-							<table id="taxonomy-main-table" class="w-full text-left text-sm border-collapse widefat">
+							<table id="taxonomy-main-table" class="w-full border-collapse text-left text-sm">
 								<thead>
-									<tr class="border-b border-neutral-300 bg-[#f6f7f7]">
-										<th scope="col" class="px-4 py-2.5 font-semibold text-neutral-900 w-24">ID</th>
-										<th scope="col" class="px-4 py-2.5 font-semibold text-neutral-900">Nome</th>
-										<th scope="col" class="px-4 py-2.5 font-semibold text-neutral-900">Slug</th>
-										<th scope="col" class="col-seo px-4 py-2.5 font-semibold text-neutral-900 text-center w-28">
+									<tr class="border-b border-slate-200 bg-slate-50">
+										<th scope="col" class="w-24 px-6 py-5 text-xs font-semibold uppercase tracking-wider text-slate-800">ID</th>
+										<th scope="col" class="px-6 py-5 text-xs font-semibold uppercase tracking-wider text-slate-800">Nome</th>
+										<th scope="col" class="px-6 py-5 text-xs font-semibold uppercase tracking-wider text-slate-800">Slug</th>
+										<th scope="col" class="col-seo w-28 px-6 py-5 text-center text-xs font-semibold uppercase tracking-wider text-slate-800">
 											SEO
 										</th>
-										<th scope="col" class="px-4 py-2.5 font-semibold text-neutral-900 text-right w-24">
+										<th scope="col" class="w-24 px-6 py-5 text-right text-xs font-semibold uppercase tracking-wider text-slate-800">
 											<span class="sr-only">Ações</span>
 										</th>
 									</tr>
 								</thead>
-								<tbody id="taxonomy-table-body" class="bg-white divide-y divide-neutral-200"></tbody>
+								<tbody id="taxonomy-table-body" class="divide-y divide-slate-100 bg-white"></tbody>
 							</table>
 						</div>
 						<p
 							id="taxonomy-empty-hint"
-							class="hidden px-4 py-8 text-sm text-neutral-500 text-center border-t border-neutral-200 bg-neutral-50/50"
+							class="hidden border-t border-slate-100 bg-slate-50/60 px-4 py-10 text-center text-sm text-slate-500"
 						>
-							Nenhum item. Adiciona um na coluna ao lado.
+							{uiStatusMessages.empty.noCategories}
 						</p>
 					</section>
 				</div>
@@ -155,7 +153,7 @@ const initialTags = await readTags();
 
 	<dialog
 		id="dialog-category-seo"
-		class="rounded-lg border border-neutral-300 bg-white p-0 shadow-xl max-w-lg w-[min(100%,28rem)] backdrop:bg-black/50 open:backdrop:bg-black/50"
+		class="w-[min(100%,28rem)] max-w-lg overflow-hidden rounded-xl border border-slate-200 bg-white p-0 shadow-xl backdrop:bg-black/50 open:backdrop:bg-black/50"
 		aria-labelledby="dialog-seo-title"
 	>
 		<form id="form-category-seo" class="p-6 space-y-4">
@@ -219,35 +217,47 @@ const initialTags = await readTags();
 				>
 					Cancelar
 				</button>
-				<button
-					type="submit"
-					class="rounded border border-[#2271b1] bg-[#2271b1] px-4 py-2 text-sm font-medium text-white hover:bg-[#135e96]"
-				>
-					Guardar SEO
-				</button>
+							<button
+								type="submit"
+								class="rounded-xl bg-[#6D28D9] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors duration-200 ease-out hover:bg-[#5b21b6] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-[#6D28D9]"
+							>
+								Guardar SEO
+							</button>
 			</div>
 			<p id="seo-form-msg" class="text-sm min-h-[1.25rem]" role="status" aria-live="polite"></p>
 		</form>
 	</dialog>
 
-	<style>
-		.taxonomy-mode-tags .col-seo {
-			display: none;
-		}
-	</style>
+	<script is:inline>
+		globalThis.__taxonomyModuleLoaded = false;
+	</script>
 
-	<script
-		define:vars={{
-			initialCategories,
-			initialTags,
-		}}
+	<!-- Feedback sempre visível (evita mensagens só no parágrafo do formulário). -->
+	<div
+		id="taxonomy-toast"
+		class="pointer-events-none fixed bottom-6 right-6 z-[100] max-w-md translate-y-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 opacity-0 shadow-lg transition-all duration-300 ease-out"
+		role="status"
+		aria-live="polite"
+		aria-atomic="true"
+		hidden
 	>
+	</div>
+
+	<script is:inline define:vars={{ initialCategories }}>
+		globalThis.__taxonomyInitialCategories = initialCategories;
+	</script>
+
+	<script>
 		import { actions } from 'astro:actions';
+		import { uiStatusMessages } from '../../lib/ui-status-messages';
+
+		globalThis.__taxonomyModuleLoaded = true;
 
 		type CategoryRow = {
 			id: string;
 			name: string;
 			slug: string;
+			description?: string;
 			seo?: {
 				metaTitle?: string;
 				metaDescription?: string;
@@ -255,27 +265,28 @@ const initialTags = await readTags();
 				ogImage?: string;
 			};
 		};
-		type TagRow = { id: string; name: string; slug: string };
-
-		let mode: 'categories' | 'tags' = 'categories';
-		let categories: CategoryRow[] = initialCategories as CategoryRow[];
-		let tags: TagRow[] = initialTags;
+		const initialCategoriesRaw = (globalThis as Record<string, unknown>).__taxonomyInitialCategories;
+		const initialRows =
+			initialCategoriesRaw && Array.isArray(initialCategoriesRaw)
+				? (initialCategoriesRaw as CategoryRow[])
+				: [];
+		let categories: CategoryRow[] = structuredClone(initialRows);
 
 		/** Se o utilizador editou o slug manualmente, deixamos de sobrescrever (até repor). */
-		let slugLocked = false;
-
-		const tabCat = document.querySelector('#tab-categories');
-		const tabTags = document.querySelector('#tab-tags');
-		const formLabel = document.querySelector('#form-mode-label');
-		const submitLabel = document.querySelector('#submit-mode-label');
-		const tableLabel = document.querySelector('#table-mode-label');
+		let slugManualLock = false;
+		/** Evita tratar `input` no slug quando o valor foi definido a partir do nome (alguns browsers). */
+		let syncingSlugFromName = false;
 		const countEl = document.querySelector('#taxonomy-count');
 		const tbody = document.querySelector('#taxonomy-table-body');
 		const emptyHint = document.querySelector('#taxonomy-empty-hint');
 		const form = document.querySelector('#taxonomy-add-form');
 		const nameInput = document.querySelector('#field-t-name');
 		const slugInput = document.querySelector('#field-t-slug');
+		const descriptionInput = document.querySelector('#field-t-description');
 		const msgEl = document.querySelector('#taxonomy-form-msg');
+		const submitBtn = document.querySelector('#taxonomy-submit-btn');
+		const toastEl = document.querySelector('#taxonomy-toast');
+		let toastTimer = 0;
 		const btnResync = document.querySelector('#btn-resync-slug');
 		const slugHelpDefault = document.querySelector('#slug-help-default');
 		const dialogSeo = document.querySelector('#dialog-category-seo');
@@ -290,6 +301,8 @@ const initialTags = await readTags();
 		const seoCountDesc = document.querySelector('#seo-count-desc');
 		const seoFormMsg = document.querySelector('#seo-form-msg');
 		const seoBtnCancel = document.querySelector('#seo-btn-cancel');
+		const searchInput = document.querySelector('#taxonomy-search');
+		let filterQuery = '';
 
 		function slugify(raw: string): string {
 			return raw
@@ -301,34 +314,93 @@ const initialTags = await readTags();
 				.slice(0, 80);
 		}
 
+		function normalizeSearch(raw: string): string {
+			return raw
+				.toLowerCase()
+				.normalize('NFD')
+				.replace(/\p{M}/gu, '')
+				.trim();
+		}
+
+		/** Alinhado ao schema Zod em `actions/taxonomy.ts` (aceita letras, números, _ e hífens). */
+		function isValidSlugSegment(s: string): boolean {
+			return /^[\w-]+$/.test(s);
+		}
+
+		function actionErrMessage(err: unknown): string {
+			if (err instanceof Error && err.message.trim()) return err.message.trim();
+			if (typeof err === 'object' && err !== null && 'message' in err) {
+				const m = String((err as { message?: unknown }).message ?? '').trim();
+				if (m) return m;
+			}
+			return 'Erro ao comunicar com o servidor.';
+		}
+
+		function showToast(message: string, variant: 'success' | 'error' | 'info' = 'info') {
+			if (!(toastEl instanceof HTMLElement)) return;
+			window.clearTimeout(toastTimer);
+			toastEl.hidden = false;
+			toastEl.textContent = message;
+			toastEl.className =
+				'fixed bottom-6 right-6 z-[100] max-w-md translate-y-3 rounded-xl border px-4 py-3 text-sm opacity-0 shadow-lg transition-all duration-300 ease-out pointer-events-none';
+			if (variant === 'success') {
+				toastEl.classList.add('border-emerald-200', 'bg-emerald-50', 'text-emerald-950');
+			} else if (variant === 'error') {
+				toastEl.classList.add('border-red-200', 'bg-red-50', 'text-red-950');
+			} else {
+				toastEl.classList.add('border-slate-200', 'bg-white', 'text-slate-800');
+			}
+			requestAnimationFrame(() => {
+				toastEl.classList.remove('opacity-0', 'translate-y-3');
+				toastEl.classList.add('opacity-100', 'translate-y-0');
+			});
+			toastTimer = window.setTimeout(() => {
+				toastEl.classList.add('opacity-0', 'translate-y-3');
+				toastEl.classList.remove('opacity-100', 'translate-y-0');
+				window.setTimeout(() => {
+					toastEl.hidden = true;
+				}, 320);
+			}, 5200);
+		}
+
 		function syncSlugFromName() {
 			if (!(slugInput instanceof HTMLInputElement) || !(nameInput instanceof HTMLInputElement)) return;
-			if (mode !== 'categories' || slugLocked) return;
+			if (slugManualLock) return;
+			syncingSlugFromName = true;
 			slugInput.value = slugify(nameInput.value);
+			queueMicrotask(() => {
+				syncingSlugFromName = false;
+			});
 			updateResyncVisibility();
 		}
 
 		function updateResyncVisibility() {
 			if (!(btnResync instanceof HTMLButtonElement) || !(slugHelpDefault instanceof HTMLElement)) return;
-			const show = mode === 'categories' && slugLocked;
+			const show = slugManualLock;
 			btnResync.hidden = !show;
 			slugHelpDefault.classList.toggle('hidden', show);
 		}
 
-		function currentRows(): CategoryRow[] | TagRow[] {
-			return mode === 'categories' ? categories : tags;
-		}
-
-		function setRows(next: CategoryRow[] | TagRow[]) {
-			if (mode === 'categories') categories = next as CategoryRow[];
-			else tags = next as TagRow[];
+		function setRows(next: CategoryRow[]) {
+			categories = next;
 		}
 
 		function renderTable() {
 			if (!(tbody instanceof HTMLTableSectionElement)) return;
-			const rows = currentRows();
+			const rows = categories.filter((row) => {
+				if (!filterQuery.trim()) return true;
+				const haystack = normalizeSearch(`${row.name} ${row.slug} ${row.description ?? ''}`);
+				return haystack.includes(filterQuery);
+			});
 			tbody.replaceChildren();
-			if (countEl) countEl.textContent = `${rows.length} ${rows.length === 1 ? 'item' : 'itens'}`;
+			if (countEl) {
+				const total = categories.length;
+				const shown = rows.length;
+				countEl.textContent =
+					filterQuery.trim().length > 0
+						? `${shown} de ${total} itens`
+						: `${shown} ${shown === 1 ? 'item' : 'itens'}`;
+			}
 			if (rows.length === 0) {
 				emptyHint?.classList.remove('hidden');
 			} else {
@@ -336,18 +408,18 @@ const initialTags = await readTags();
 			}
 			for (const row of rows) {
 				const tr = document.createElement('tr');
-				tr.className = 'hover:bg-[#f6f7f7] transition-colors';
-				const seoBtn =
-					mode === 'categories'
-						? `<button type="button" class="taxonomy-seo text-[#2271b1] hover:text-[#135e96] text-sm font-medium hover:underline focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[#2271b1] rounded" data-id="${escapeAttr(row.id)}">Editar SEO</button>`
-						: '—';
+				tr.className = 'transition-colors hover:bg-slate-50/80';
+				const seoBtn = `<button type="button" class="taxonomy-seo text-sm font-medium text-[#6D28D9] hover:text-[#5b21b6] hover:underline focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[#6D28D9] rounded" data-id="${escapeAttr(row.id)}">Editar SEO</button>`;
 				tr.innerHTML = `
-					<td class="px-4 py-2.5 font-mono text-[10px] text-neutral-500 align-top" title="${escapeAttr(row.id)}">${escapeHtml(row.id.slice(0, 8))}…</td>
-					<td class="px-4 py-2.5 text-neutral-900 font-medium align-top">${escapeHtml(row.name)}</td>
-					<td class="px-4 py-2.5 font-mono text-xs text-neutral-700 align-top">${escapeHtml(row.slug)}</td>
-					<td class="col-seo px-4 py-2.5 text-center align-top">${seoBtn}</td>
-					<td class="px-4 py-2.5 text-right align-top">
-						<button type="button" class="taxonomy-del text-[#b32d2e] hover:text-[#8a2424] text-sm font-medium hover:underline focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[#2271b1] rounded" data-id="${escapeAttr(row.id)}">
+					<td class="px-6 py-7 align-top font-mono text-[10px] text-slate-500" title="${escapeAttr(row.id)}">${escapeHtml(row.id.slice(0, 8))}…</td>
+					<td class="px-6 py-7 align-top">
+						<p class="font-medium text-slate-900">${escapeHtml(row.name)}</p>
+						${row.description?.trim() ? `<p class="mt-1 text-xs text-slate-500">${escapeHtml(row.description)}</p>` : ''}
+					</td>
+					<td class="px-6 py-7 align-top font-mono text-xs text-slate-700">${escapeHtml(row.slug)}</td>
+					<td class="col-seo px-6 py-7 align-top text-center">${seoBtn}</td>
+					<td class="px-6 py-7 align-top text-right">
+						<button type="button" class="taxonomy-del rounded text-sm font-medium text-red-600 hover:text-red-700 hover:underline focus:outline focus:outline-2 focus:outline-offset-1 focus:outline-[#6D28D9]" data-id="${escapeAttr(row.id)}">
 							Excluir
 						</button>
 					</td>
@@ -361,6 +433,12 @@ const initialTags = await readTags();
 				btn.addEventListener('click', onSeoClick);
 			}
 		}
+
+		searchInput?.addEventListener('input', () => {
+			if (!(searchInput instanceof HTMLInputElement)) return;
+			filterQuery = normalizeSearch(searchInput.value);
+			renderTable();
+		});
 
 		function escapeHtml(s: string): string {
 			const d = document.createElement('div');
@@ -424,7 +502,7 @@ const initialTags = await readTags();
 			const ogImage = seoOgImage instanceof HTMLInputElement ? seoOgImage.value : '';
 			const noindex = seoNoindex instanceof HTMLInputElement ? seoNoindex.checked : false;
 			if (seoFormMsg) {
-				seoFormMsg.textContent = 'A gravar…';
+				seoFormMsg.textContent = uiStatusMessages.loading.saving;
 				seoFormMsg.className = 'text-sm min-h-[1.25rem] text-neutral-600';
 			}
 			try {
@@ -450,67 +528,38 @@ const initialTags = await readTags();
 				setMsg('SEO da categoria atualizado.');
 			} catch (err) {
 				if (seoFormMsg) {
-					seoFormMsg.textContent = err instanceof Error ? err.message : 'Erro ao gravar.';
+					seoFormMsg.textContent = err instanceof Error ? err.message : uiStatusMessages.error.saveGeneric;
 					seoFormMsg.className = 'text-sm min-h-[1.25rem] text-[#b32d2e]';
 				}
 			}
 		});
 
-		function setMsg(text: string, isError = false) {
+		function setMsg(
+			text: string,
+			isError = false,
+			toastVariant: 'success' | 'error' | 'info' = 'info',
+		) {
 			if (!(msgEl instanceof HTMLElement)) return;
 			msgEl.textContent = text;
 			msgEl.className =
-				'text-sm min-h-[1.25rem] ' + (isError ? 'text-[#b32d2e]' : 'text-neutral-600');
-		}
-
-		function updateTabStyles() {
-			const activeTab =
-				'taxonomy-tab rounded-t-md border border-b-0 border-neutral-300 bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 shadow-[inset_0_-1px_0_0_white] relative z-[1]';
-			const idleTab =
-				'taxonomy-tab relative z-[1] rounded-t-md border border-transparent border-b-neutral-300 bg-[#e8e8e8] px-5 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-200 hover:text-neutral-900';
-
-			if (tabCat instanceof HTMLButtonElement) {
-				tabCat.className = mode === 'categories' ? activeTab : idleTab;
-				tabCat.setAttribute('aria-selected', mode === 'categories' ? 'true' : 'false');
-			}
-			if (tabTags instanceof HTMLButtonElement) {
-				tabTags.className = mode === 'tags' ? activeTab : idleTab;
-				tabTags.setAttribute('aria-selected', mode === 'tags' ? 'true' : 'false');
-			}
-			if (formLabel) formLabel.textContent = mode === 'categories' ? 'categoria' : 'tag';
-			if (submitLabel) submitLabel.textContent = mode === 'categories' ? 'categoria' : 'tag';
-			if (tableLabel) tableLabel.textContent = mode === 'categories' ? 'categorias' : 'tags';
-			updateResyncVisibility();
-			const tbl = document.querySelector('#taxonomy-main-table');
-			if (tbl) tbl.classList.toggle('taxonomy-mode-tags', mode === 'tags');
-		}
-
-		function switchMode(next: 'categories' | 'tags') {
-			mode = next;
-			slugLocked = false;
-			updateTabStyles();
-			if (form instanceof HTMLFormElement) form.reset();
-			setMsg('');
-			renderTable();
-			if (mode === 'categories' && nameInput instanceof HTMLInputElement && slugInput instanceof HTMLInputElement) {
-				syncSlugFromName();
+				'text-sm min-h-[1.25rem] ' + (isError ? 'text-[#b32d2e] font-medium' : 'text-neutral-600');
+			if (text.trim() && text !== uiStatusMessages.loading.saving) {
+				const v = isError ? 'error' : toastVariant;
+				showToast(text, v);
 			}
 		}
 
-		tabCat?.addEventListener('click', () => switchMode('categories'));
-		tabTags?.addEventListener('click', () => switchMode('tags'));
-
-		nameInput?.addEventListener('input', () => {
-			syncSlugFromName();
-		});
+		nameInput?.addEventListener('input', syncSlugFromName);
+		nameInput?.addEventListener('compositionend', syncSlugFromName);
 
 		slugInput?.addEventListener('input', () => {
-			if (mode === 'categories') slugLocked = true;
+			if (syncingSlugFromName) return;
+			slugManualLock = true;
 			updateResyncVisibility();
 		});
 
 		btnResync?.addEventListener('click', () => {
-			slugLocked = false;
+			slugManualLock = false;
 			syncSlugFromName();
 			setMsg('Slug reposto a partir do nome.');
 		});
@@ -520,50 +569,53 @@ const initialTags = await readTags();
 			if (!(nameInput instanceof HTMLInputElement) || !(slugInput instanceof HTMLInputElement)) return;
 			const name = nameInput.value.trim();
 			const slug = slugInput.value.trim().toLowerCase();
+			const description =
+				descriptionInput instanceof HTMLTextAreaElement ? descriptionInput.value.trim() : '';
 			if (!name || !slug) {
 				setMsg('Preenche o nome e o slug.', true);
 				return;
 			}
-			setMsg('A gravar…');
+			if (!isValidSlugSegment(slug)) {
+				setMsg('No slug usa apenas letras minúsculas, números e hífens (sem espaços).', true);
+				slugInput.focus();
+				return;
+			}
+			const prevBtnText = submitBtn instanceof HTMLButtonElement ? submitBtn.textContent : '';
+			if (submitBtn instanceof HTMLButtonElement) {
+				submitBtn.disabled = true;
+				submitBtn.textContent = uiStatusMessages.loading.saving;
+			}
+			setMsg(uiStatusMessages.loading.saving);
 			try {
-				if (mode === 'categories') {
-					const { data, error } = await actions.taxonomy.addCategory({ name, slug });
-					if (error) {
-						setMsg(error.message, true);
-						return;
-					}
-					if (data?.categories) {
-						setRows(data.categories);
-						renderTable();
-					}
-					if (data && 'added' in data && data.added === false) {
-						setMsg('Já existe uma categoria com este slug.');
-					} else {
-						setMsg('Categoria adicionada.');
-						form.reset();
-						slugLocked = false;
-						syncSlugFromName();
-					}
+				const result = await actions.taxonomy.addCategory({ name, slug, description });
+				const { data, error } = result;
+				if (error) {
+					setMsg(actionErrMessage(error), true);
+					return;
+				}
+				if (!data) {
+					setMsg('Resposta vazia do servidor ao criar categoria.', true);
+					return;
+				}
+				if (data.categories) {
+					setRows(data.categories as CategoryRow[]);
+					renderTable();
+				}
+				if ('added' in data && data.added === false) {
+					setMsg(uiStatusMessages.error.duplicateCategorySlug, false, 'info');
 				} else {
-					const { data, error } = await actions.taxonomy.addTag({ name, slug });
-					if (error) {
-						setMsg(error.message, true);
-						return;
-					}
-					if (data?.tags) {
-						setRows(data.tags);
-						renderTable();
-					}
-					if (data && 'added' in data && data.added === false) {
-						setMsg('Já existe uma tag com este slug.');
-					} else {
-						setMsg('Tag adicionada.');
-						form.reset();
-						slugLocked = false;
-					}
+					setMsg(uiStatusMessages.success.categoryAdded, false, 'success');
+					form.reset();
+					slugManualLock = false;
+					syncSlugFromName();
 				}
 			} catch (err) {
-				setMsg(err instanceof Error ? err.message : 'Erro ao gravar.', true);
+				setMsg(actionErrMessage(err), true);
+			} finally {
+				if (submitBtn instanceof HTMLButtonElement) {
+					submitBtn.disabled = false;
+					if (prevBtnText) submitBtn.textContent = prevBtnText;
+				}
 			}
 		});
 
@@ -571,39 +623,48 @@ const initialTags = await readTags();
 			const btn = ev.currentTarget;
 			if (!(btn instanceof HTMLButtonElement)) return;
 			const id = btn.getAttribute('data-id');
-			if (!id || !confirm('Eliminar este item permanentemente?')) return;
+			if (!id || !confirm(uiStatusMessages.confirm.deleteCategory)) return;
 			setMsg('');
 			try {
-				if (mode === 'categories') {
-					const { data, error } = await actions.taxonomy.deleteCategory({ id });
-					if (error) {
-						setMsg(error.message, true);
-						return;
-					}
-					if (data?.categories) {
-						setRows(data.categories);
-						renderTable();
-					}
-					setMsg(data?.removed ? 'Categoria removida.' : 'Item não encontrado.');
-				} else {
-					const { data, error } = await actions.taxonomy.deleteTag({ id });
-					if (error) {
-						setMsg(error.message, true);
-						return;
-					}
-					if (data?.tags) {
-						setRows(data.tags);
-						renderTable();
-					}
-					setMsg(data?.removed ? 'Tag removida.' : 'Item não encontrado.');
+				const { data, error } = await actions.taxonomy.deleteCategory({ id });
+				if (error) {
+					setMsg(error.message, true);
+					return;
 				}
+				if (data?.categories) {
+					setRows(data.categories as CategoryRow[]);
+					renderTable();
+				}
+				setMsg(data?.removed ? uiStatusMessages.success.categoryRemoved : uiStatusMessages.error.categoryNotFound);
 			} catch (err) {
 				setMsg(err instanceof Error ? err.message : 'Erro ao excluir.', true);
 			}
 		}
 
-		updateTabStyles();
 		renderTable();
-		if (mode === 'categories') syncSlugFromName();
+		syncSlugFromName();
+	</script>
+
+	<script is:inline>
+		(function () {
+			const form = document.getElementById('taxonomy-add-form');
+			const msg = document.getElementById('taxonomy-form-msg');
+			if (!form) return;
+			form.addEventListener(
+				'submit',
+				function (e) {
+					e.preventDefault();
+					if (!globalThis.__taxonomyModuleLoaded) {
+						const t =
+							'O JavaScript do painel não carregou (erro comum: dependências do Vite). Abre a consola (F12), para outros processos `npm run dev`, apaga `node_modules/.vite` e recarrega. Em deploy na Vercel, gravar `categories.json` no disco não funciona — usa só em desenvolvimento local.';
+						if (msg) {
+							msg.textContent = t;
+							msg.className = 'text-sm min-h-[1.25rem] text-[#b45309] font-medium';
+						}
+					}
+				},
+				true,
+			);
+		})();
 	</script>
 </DashboardLayout>
