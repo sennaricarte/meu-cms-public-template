@@ -1,0 +1,7 @@
+{
+	"siteName": "Astro Blog",
+	"siteUrl": "https://example.com/",
+	"siteDescription": "Welcome to my website!",
+	"logoPath": "/favicon.svg",
+	"faviconPath": "/favicon.svg"
+}
