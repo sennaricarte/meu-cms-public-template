@@ -17,6 +17,10 @@ const categories = await readCategories();
 const tags = await readTags();
 const slugByCategoryName = new Map(categories.map((c) => [c.name.trim(), c.slug]));
 const slugByTagName = new Map(tags.map((t) => [t.name.trim(), t.slug]));
+const visibleCategories = categories.slice(0, 4);
+const visibleTags = tags.slice(0, 4);
+const hasMoreCategories = categories.length > visibleCategories.length;
+const hasMoreTags = tags.length > visibleTags.length;
 
 const allPosts = (await getCollection('blog'))
 	.filter((p) => !p.data.draft)
@@ -92,7 +96,7 @@ const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 							Categorias
 						</h2>
 						<ul class="m-0 flex list-none flex-wrap gap-2 p-0" role="list">
-							{categories.map((c) => {
+							{visibleCategories.map((c) => {
 								const count = categoryCounts.get(c.slug) ?? 0;
 								const countLabel =
 									count === 1 ? '1 artigo publicado' : `${count} artigos publicados`;
@@ -111,6 +115,20 @@ const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 									</li>
 								);
 							})}
+							{
+								hasMoreCategories && (
+									<li>
+										<a
+											href="/blog/categorias"
+											class="inline-flex items-center justify-center rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-sm font-semibold text-neutral-500 shadow-sm transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-neutral-400"
+											aria-label="Ver todas as categorias"
+											title="Ver todas as categorias"
+										>
+											+
+										</a>
+									</li>
+								)
+							}
 						</ul>
 					</nav>
 				)
@@ -128,7 +146,7 @@ const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 							Tags
 						</h2>
 						<ul class="m-0 flex list-none flex-wrap gap-2 p-0" role="list">
-							{tags.map((t) => {
+							{visibleTags.map((t) => {
 								const count = tagCounts.get(t.slug) ?? 0;
 								const countLabel = count === 1 ? '1 artigo publicado' : `${count} artigos publicados`;
 								return (
@@ -146,6 +164,20 @@ const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 									</li>
 								);
 							})}
+							{
+								hasMoreTags && (
+									<li>
+										<a
+											href="/blog/tags"
+											class="inline-flex items-center justify-center rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-sm font-semibold text-neutral-500 shadow-sm transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-neutral-400"
+											aria-label="Ver todas as tags"
+											title="Ver todas as tags"
+										>
+											+
+										</a>
+									</li>
+								)
+							}
 						</ul>
 					</nav>
 				)
