@@ -1,138 +1,88 @@
 ---
-// Gerada em build time — lista de posts da Content Collection.
-export const prerender = true;
+// Usa SSR para suportar paginação por querystring (?page=2).
+export const prerender = false;
 
-import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import PostCard from '../../components/PostCard.astro';
+import siteConfigJson from '../../data/config.json';
+import { normalizeSiteConfig } from '../../lib/site-config';
 import { readCategories, readTags } from '../../lib/taxonomy-data';
+
+const PAGE_SIZE = 15;
 
 const categories = await readCategories();
 const tags = await readTags();
 const slugByCategoryName = new Map(categories.map((c) => [c.name.trim(), c.slug]));
 const slugByTagName = new Map(tags.map((t) => [t.name.trim(), t.slug]));
 
-const posts = (await getCollection('blog'))
+const allPosts = (await getCollection('blog'))
 	.filter((p) => !p.data.draft)
 	.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
-/** URL do arquivo da categoria ou null se o nome não existir em `categories.json`. */
-function categoryArchiveUrl(categoryName: string | undefined): string | null {
-	const n = categoryName?.trim();
-	if (!n) return null;
-	const slug = slugByCategoryName.get(n);
-	return slug ? `/blog/categoria/${slug}/` : null;
-}
+const site = normalizeSiteConfig(siteConfigJson);
+
+const totalPages = Math.max(1, Math.ceil(allPosts.length / PAGE_SIZE));
+const pageParamRaw = Astro.url.searchParams.get('page') ?? '1';
+const parsedPage = Number.parseInt(pageParamRaw, 10);
+const currentPage =
+	Number.isFinite(parsedPage) && parsedPage > 0
+		? Math.min(parsedPage, totalPages)
+		: 1;
+const pageStart = (currentPage - 1) * PAGE_SIZE;
+const pagePosts = allPosts.slice(pageStart, pageStart + PAGE_SIZE);
 
 const categoryCounts = new Map<string, number>();
 const tagCounts = new Map<string, number>();
-for (const p of posts) {
-	const postTags = p.data.tags ?? [];
-	for (const tagName of postTags) {
-		const t = tagName.trim();
-		if (!t) continue;
-		const tSlug = slugByTagName.get(t);
-		if (!tSlug) continue;
-		tagCounts.set(tSlug, (tagCounts.get(tSlug) ?? 0) + 1);
+for (const post of allPosts) {
+	const categoryName = post.data.category?.trim();
+	if (categoryName) {
+		const categorySlug = slugByCategoryName.get(categoryName);
+		if (categorySlug) {
+			categoryCounts.set(categorySlug, (categoryCounts.get(categorySlug) ?? 0) + 1);
+		}
 	}
 
-	const n = p.data.category?.trim();
-	if (!n) continue;
-	const slug = slugByCategoryName.get(n);
-	if (!slug) continue;
-	categoryCounts.set(slug, (categoryCounts.get(slug) ?? 0) + 1);
+	for (const rawTag of post.data.tags ?? []) {
+		const tagName = rawTag.trim();
+		if (!tagName) continue;
+		const tagSlug = slugByTagName.get(tagName);
+		if (!tagSlug) continue;
+		tagCounts.set(tagSlug, (tagCounts.get(tagSlug) ?? 0) + 1);
+	}
 }
+
+function buildPageHref(page: number): string {
+	return page <= 1 ? '/blog' : `/blog?page=${page}`;
+}
+
+const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 ---
 
 <!doctype html>
 <html lang="pt-br">
 	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
-		<style>
-			main {
-				width: 960px;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: 12px;
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: rgb(var(--black));
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: rgb(var(--gray));
-			}
-			.post-category {
-				margin: 0.35rem 0 0;
-				line-height: 1.3;
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: rgb(var(--accent));
-			}
-			ul a:hover img {
-				box-shadow: var(--box-shadow);
-			}
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
-				}
-			}
-		</style>
+		<BaseHead title={site.siteName} description={site.siteDescription} />
 	</head>
-	<body>
+	<body class="bg-white text-gray-900 antialiased">
 		<Header />
-		<main>
+		<main id="main-content" class="mx-auto max-w-7xl space-y-8 px-6 py-10">
+			<header class="space-y-2">
+				<p class="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">Blog</p>
+				<h1 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+					Todos os artigos
+				</h1>
+				<p class="text-sm text-gray-500">
+					Página {currentPage} de {totalPages} · {allPosts.length} artigos publicados
+				</p>
+			</header>
+
 			{
 				categories.length > 0 && (
 					<nav
-						class="blog-index-categories mb-8 rounded-xl border border-neutral-200 bg-neutral-50/90 px-4 py-4 sm:px-5"
+						class="rounded-xl border border-neutral-200 bg-neutral-50/90 px-4 py-4 sm:px-5"
 						aria-labelledby="blog-index-cat-heading"
 					>
 						<h2
@@ -141,7 +91,7 @@ for (const p of posts) {
 						>
 							Categorias
 						</h2>
-						<ul class="m-0 flex list-none flex-wrap gap-2 p-0">
+						<ul class="m-0 flex list-none flex-wrap gap-2 p-0" role="list">
 							{categories.map((c) => {
 								const count = categoryCounts.get(c.slug) ?? 0;
 								const countLabel =
@@ -168,7 +118,7 @@ for (const p of posts) {
 			{
 				tags.length > 0 && (
 					<nav
-						class="blog-index-tags mb-8 rounded-xl border border-neutral-200 bg-neutral-50/90 px-4 py-4 sm:px-5"
+						class="rounded-xl border border-neutral-200 bg-neutral-50/90 px-4 py-4 sm:px-5"
 						aria-labelledby="blog-index-tags-heading"
 					>
 						<h2
@@ -177,7 +127,7 @@ for (const p of posts) {
 						>
 							Tags
 						</h2>
-						<ul class="m-0 flex list-none flex-wrap gap-2 p-0">
+						<ul class="m-0 flex list-none flex-wrap gap-2 p-0" role="list">
 							{tags.map((t) => {
 								const count = tagCounts.get(t.slug) ?? 0;
 								const countLabel = count === 1 ? '1 artigo publicado' : `${count} artigos publicados`;
@@ -202,53 +152,74 @@ for (const p of posts) {
 			}
 
 			<section aria-labelledby="blog-posts-heading">
-				<h2 id="blog-posts-heading" class="sr-only">Artigos do blog</h2>
-				<ul>
-					{
-						posts.map((post) => {
-							const catLabel = post.data.category?.trim();
-							const catHref = categoryArchiveUrl(post.data.category);
-							return (
-								<li>
-									<a href={`/blog/${post.id}/`}>
-										{post.data.heroImage && (
-											<Image
-												width={720}
-												height={360}
-												src={post.data.heroImage}
-												alt={post.data.title}
-												format="webp"
-												quality="mid"
-											/>
-										)}
-										<h4 class="title">{post.data.title}</h4>
-										<p class="date">
-											<FormattedDate date={post.data.pubDate} />
-										</p>
-									</a>
-									{catLabel &&
-										(catHref ? (
-											<p class="post-category">
-												<span class="text-xs uppercase tracking-wide text-neutral-500">Categoria · </span>
-												<a
-													href={catHref}
-													class="text-sm font-medium text-neutral-700 underline-offset-2 hover:text-[var(--accent)] hover:underline"
-												>
-													{catLabel}
-												</a>
-											</p>
-										) : (
-											<p class="post-category text-sm text-neutral-500">
-												<span class="text-xs uppercase tracking-wide">Categoria · </span>
-												{catLabel}
-											</p>
-										))}
-								</li>
-							);
-						})
-					}
+				<h2
+					id="blog-posts-heading"
+					class="mb-6 text-xs font-bold uppercase tracking-[0.15em] text-gray-400"
+				>
+					Artigos
+				</h2>
+				<ul
+					class="grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3"
+					role="list"
+					aria-label="Lista de artigos do blog"
+				>
+					{pagePosts.map((post) => (
+						<li class="flex">
+							<PostCard post={post} />
+						</li>
+					))}
 				</ul>
 			</section>
+
+			{
+				totalPages > 1 && (
+					<nav
+						class="flex flex-wrap items-center justify-center gap-2 border-t border-gray-100 pt-8"
+						aria-label="Paginação de artigos"
+					>
+						<a
+							href={buildPageHref(Math.max(1, currentPage - 1))}
+							aria-disabled={currentPage <= 1}
+							class:list={[
+								'rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+								currentPage <= 1
+									? 'pointer-events-none border-gray-100 text-gray-300'
+									: 'border-gray-200 text-gray-700 hover:border-[var(--accent)] hover:text-[var(--accent)]',
+							]}
+						>
+							Anterior
+						</a>
+
+						{pagesToShow.map((page) => (
+							<a
+								href={buildPageHref(page)}
+								aria-current={page === currentPage ? 'page' : undefined}
+								class:list={[
+									'rounded-lg border px-3 py-2 text-sm font-semibold transition-colors',
+									page === currentPage
+										? 'border-[var(--accent)] bg-blue-50 text-[var(--accent)]'
+										: 'border-gray-200 text-gray-700 hover:border-[var(--accent)] hover:text-[var(--accent)]',
+								]}
+							>
+								{page}
+							</a>
+						))}
+
+						<a
+							href={buildPageHref(Math.min(totalPages, currentPage + 1))}
+							aria-disabled={currentPage >= totalPages}
+							class:list={[
+								'rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
+								currentPage >= totalPages
+									? 'pointer-events-none border-gray-100 text-gray-300'
+									: 'border-gray-200 text-gray-700 hover:border-[var(--accent)] hover:text-[var(--accent)]',
+							]}
+						>
+							Próxima
+						</a>
+					</nav>
+				)
+			}
 		</main>
 		<Footer />
 	</body>
