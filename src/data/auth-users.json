@@ -1,0 +1,12 @@
+{
+  "users": [
+    {
+      "id": "u_001",
+      "name": "Cliente Exemplo",
+      "email": "cliente@exemplo.com",
+      "passwordHash": "REPLACE_WITH_HASH_SHA256_HMAC",
+      "siteIds": ["site_demo_001"],
+      "role": "client"
+    }
+  ]
+}
