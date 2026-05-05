@@ -1,45 +1,15 @@
 /**
- * Sessão do painel /admin: cookie `admin_session` = HMAC estável a partir de
- * ADMIN_USER + ADMIN_PASSWORD (+ SESSION_SECRET opcional).
- * ADMIN_PASS mantém compatibilidade com projetos antigos.
+ * Sessão do painel /admin: cookie `admin_session` = HMAC a partir das mesmas
+ * credenciais que src/lib/admin-env.ts (ADMIN_USER + ADMIN_PASSWORD).
  */
 
 import type { AstroCookies } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { getAdminCredentials, usesFallbackAdminCredentials } from './admin-env';
 
 export const ADMIN_SESSION_COOKIE = 'admin_session';
 
-const DEFAULT_ADMIN_USER = 'admin';
-const DEFAULT_ADMIN_PASS = 'changeme';
-
-function rawAdminPasswordEnv(): unknown {
-	return import.meta.env.ADMIN_PASSWORD ?? import.meta.env.ADMIN_PASS;
-}
-
-/** Credenciais efetivas (env ou valores temporários por defeito em desenvolvimento / até configurar Vercel). */
-export function getAdminCredentials(): { user: string; pass: string; secret: string } {
-	const rawUser = import.meta.env.ADMIN_USER;
-	const rawPass = rawAdminPasswordEnv();
-	const rawSecret = import.meta.env.SESSION_SECRET;
-	const user =
-		typeof rawUser === 'string' && rawUser.trim().length > 0 ? rawUser.trim() : DEFAULT_ADMIN_USER;
-	const pass =
-		typeof rawPass === 'string' && rawPass.trim().length > 0
-			? rawPass.trim()
-			: DEFAULT_ADMIN_PASS;
-	const secret =
-		typeof rawSecret === 'string' && rawSecret.trim().length ? rawSecret.trim() : pass;
-	return { user, pass, secret };
-}
-
-/** True se ADMIN_USER ou senha (ADMIN_PASSWORD / ADMIN_PASS) não estão definidos — usando valores temporários. */
-export function usesFallbackAdminCredentials(): boolean {
-	const rawUser = import.meta.env.ADMIN_USER;
-	const rawPass = rawAdminPasswordEnv();
-	const hasUser = typeof rawUser === 'string' && rawUser.trim().length > 0;
-	const hasPass = typeof rawPass === 'string' && rawPass.trim().length > 0;
-	return !hasUser || !hasPass;
-}
+export { getAdminCredentials, usesFallbackAdminCredentials } from './admin-env';
 
 /** Gera o valor esperado do cookie (após login bem-sucedido). */
 export function getAdminSessionTokenValue(): string {
@@ -62,7 +32,7 @@ export function isValidAdminSession(token: string | undefined | null): boolean {
 	}
 }
 
-/** @deprecated Prefer `usesFallbackAdminCredentials()` ou verifique env diretamente. */
+/** @deprecated Prefira `usesFallbackAdminCredentials` importado de `admin-env`. */
 export function adminEnvConfigured(): boolean {
 	return !usesFallbackAdminCredentials();
 }

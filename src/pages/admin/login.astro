@@ -2,15 +2,20 @@
 export const prerender = false;
 
 /**
- * /admin/login — validação local contra ADMIN_USER e ADMIN_PASSWORD (sem proxy nem BD).
+ * Login do painel: validação do formulário contra import.meta.env.ADMIN_USER e
+ * import.meta.env.ADMIN_PASSWORD (sem Supabase nem API externa).
+ * Defaults espelham src/lib/admin-env.ts (sessão HMAC).
  */
+import {
+	DEFAULT_ADMIN_PASSWORD,
+	DEFAULT_ADMIN_USER,
+	usesFallbackAdminCredentials,
+} from '../../lib/admin-env';
 import {
 	ADMIN_SESSION_COOKIE,
 	getAdminSessionTokenValue,
 	isValidAdminSession,
 	timingSafeStringEq,
-	getAdminCredentials,
-	usesFallbackAdminCredentials,
 } from '../../lib/admin-session';
 
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 horas
@@ -31,9 +36,23 @@ if (Astro.request.method === 'POST') {
 	if (!username || !password) {
 		error = 'Informe usuário e senha.';
 	} else {
-		const creds = getAdminCredentials();
-		const userOk = timingSafeStringEq(username, creds.user);
-		const passOk = timingSafeStringEq(password, creds.pass);
+		const envUserRaw = import.meta.env.ADMIN_USER;
+		const envPasswordRaw = import.meta.env.ADMIN_PASSWORD;
+
+		const expectedUser =
+			typeof envUserRaw === 'string' && envUserRaw.trim().length > 0
+				? envUserRaw.trim()
+				: DEFAULT_ADMIN_USER;
+		const expectedPassword =
+			typeof envPasswordRaw === 'string' && envPasswordRaw.trim().length > 0
+				? envPasswordRaw.trim()
+				: typeof import.meta.env.ADMIN_PASS === 'string' &&
+					  import.meta.env.ADMIN_PASS.trim().length > 0
+					? import.meta.env.ADMIN_PASS.trim()
+					: DEFAULT_ADMIN_PASSWORD;
+
+		const userOk = timingSafeStringEq(username, expectedUser);
+		const passOk = timingSafeStringEq(password, expectedPassword);
 
 		if (!userOk || !passOk) {
 			error = 'Usuário ou senha inválidos.';
@@ -120,9 +139,9 @@ if (Astro.request.method === 'POST') {
 		<p class="subtitle">Acesso restrito ao painel.</p>
 		{showDefaultCredsWarning && (
 			<div class="warning" role="status">
-				<strong>Atenção:</strong> ADMIN_USER e/ou ADMIN_PASSWORD não estão definidos — está em uso o
-				utilizador <code>admin</code> e a senha temporária <code>changeme</code>. Configure as variáveis
-				no ambiente antes de produção.
+				<strong>Atenção:</strong> Defina <code>ADMIN_USER</code> e <code>ADMIN_PASSWORD</code> nas variáveis
+				de ambiente (ex.: Vercel). Sem isso, usam-se o utilizador <code>admin</code> e a senha temporária
+				<code>changeme</code>.
 			</div>
 		)}
 		<form method="POST" autocomplete="on">
