@@ -1,22 +1,26 @@
 /**
- * Sessão do painel /admin: cookie `admin_session` = HMAC a partir das mesmas
- * credenciais que src/lib/admin-env.ts (ADMIN_USER + ADMIN_PASSWORD).
+ * Sessão do painel /admin: cookie `admin_session` = HMAC com utilizador + segredo
+ * definidos em src/data/admin-config.json (via src/lib/admin-config.ts).
  */
 
 import type { AstroCookies } from 'astro';
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import { getAdminCredentials, usesFallbackAdminCredentials } from './admin-env';
+import { getSigningCredentials, isInitialSetupPending, usesFallbackAdminCredentials } from './admin-config';
 
 export const ADMIN_SESSION_COOKIE = 'admin_session';
 
-export { getAdminCredentials, usesFallbackAdminCredentials } from './admin-env';
+export {
+	getAdminCredentials,
+	getSigningCredentials,
+	isBootstrapPending,
+	isInitialSetupPending,
+	usesFallbackAdminCredentials,
+} from './admin-config';
 
 /** Gera o valor esperado do cookie (após login bem-sucedido). */
 export function getAdminSessionTokenValue(): string {
-	const creds = getAdminCredentials();
-	return createHmac('sha256', creds.secret)
-		.update('blogonauta:admin:session:' + creds.user)
-		.digest('hex');
+	const { user, secret } = getSigningCredentials();
+	return createHmac('sha256', secret).update('blogonauta:admin:session:' + user).digest('hex');
 }
 
 export function isValidAdminSession(token: string | undefined | null): boolean {
@@ -32,9 +36,9 @@ export function isValidAdminSession(token: string | undefined | null): boolean {
 	}
 }
 
-/** @deprecated Prefira `usesFallbackAdminCredentials` importado de `admin-env`. */
+/** @deprecated Use `!isInitialSetupPending()`. */
 export function adminEnvConfigured(): boolean {
-	return !usesFallbackAdminCredentials();
+	return !isInitialSetupPending();
 }
 
 /** Comparação em tempo aproximadamente constante para user/senha no login. */

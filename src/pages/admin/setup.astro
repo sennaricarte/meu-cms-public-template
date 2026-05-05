@@ -1,0 +1,121 @@
+---
+export const prerender = false;
+
+/**
+ * Configuração inicial — envio para POST /api/update-config (hash gravado em admin-config.json).
+ */
+import { isInitialSetupPending } from '../../lib/admin-config';
+import { ADMIN_SESSION_COOKIE, isValidAdminSession } from '../../lib/admin-session';
+
+if (!isValidAdminSession(Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value)) {
+	return Astro.redirect('/admin/login');
+}
+
+if (!isInitialSetupPending()) {
+	return Astro.redirect('/admin/dashboard');
+}
+---
+
+<!doctype html>
+<html lang="pt-br">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<meta name="robots" content="noindex, nofollow" />
+	<title>Admin — Configuração inicial</title>
+	<link rel="icon" href="/favicon.ico" />
+	<style>
+		*, *::before, *::after { box-sizing: border-box; }
+		body {
+			margin: 0;
+			font-family: system-ui, sans-serif;
+			background: #f8fafc;
+			display: flex;
+			min-height: 100dvh;
+			align-items: center;
+			justify-content: center;
+			padding: 1rem;
+		}
+		.card {
+			background: #fff;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+			padding: 2.5rem 2rem;
+			width: 100%;
+			max-width: 420px;
+			box-shadow: 0 4px 24px rgba(0,0,0,.06);
+		}
+		h1 { margin: 0 0 .25rem; font-size: 1.35rem; color: #0f172a; }
+		.subtitle { margin: 0 0 1.5rem; font-size: .875rem; color: #64748b; line-height: 1.45; }
+		label { display: block; font-size: .8125rem; font-weight: 600; color: #374151; margin-bottom: .4rem; }
+		input[type="text"], input[type="password"] {
+			width: 100%; padding: .6rem .75rem;
+			border: 1px solid #d1d5db; border-radius: 8px;
+			font-size: 1rem; outline: none;
+			transition: border-color .15s;
+		}
+		input:focus { border-color: #2337ff; box-shadow: 0 0 0 3px rgba(35,55,255,.12); }
+		.field { margin-bottom: 1rem; }
+		button {
+			margin-top: .5rem; width: 100%;
+			background: #2337ff; color: #fff;
+			border: none; border-radius: 8px;
+			padding: .7rem 1rem; font-size: .9375rem;
+			font-weight: 600; cursor: pointer;
+			transition: background .15s;
+		}
+		button:hover { background: #000d8a; }
+		.hint { font-size: .75rem; color: #64748b; margin-top: .35rem; }
+	</style>
+</head>
+<body>
+	<main class="card">
+		<h1>Configuração inicial</h1>
+		<p class="subtitle">
+			Escolha o utilizador e a senha definitivos. Os dados são guardados em
+			<code>src/data/admin-config.json</code> (apenas hashes). Inclua este ficheiro nos backups.
+		</p>
+		<form method="POST" action="/api/update-config">
+			<div class="field">
+				<label for="username">Novo utilizador</label>
+				<input
+					id="username"
+					name="username"
+					type="text"
+					autocomplete="username"
+					required
+					minlength={2}
+					autofocus
+					aria-describedby="hint-user"
+				/>
+				<p id="hint-user" class="hint">Mínimo 2 caracteres.</p>
+			</div>
+			<div class="field">
+				<label for="password">Nova senha</label>
+				<input
+					id="password"
+					name="password"
+					type="password"
+					autocomplete="new-password"
+					required
+					minlength={8}
+					aria-describedby="hint-pass"
+				/>
+				<p id="hint-pass" class="hint">Mínimo 8 caracteres.</p>
+			</div>
+			<div class="field">
+				<label for="confirm">Confirmar senha</label>
+				<input
+					id="confirm"
+					name="confirm"
+					type="password"
+					autocomplete="new-password"
+					required
+					minlength={8}
+				/>
+			</div>
+			<button type="submit">Guardar e continuar</button>
+		</form>
+	</main>
+</body>
+</html>
