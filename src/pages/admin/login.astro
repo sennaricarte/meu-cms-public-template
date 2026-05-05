@@ -2,9 +2,10 @@
 export const prerender = false;
 
 /**
- * Login via API central (Lovable): credenciais validadas remotamente com SITE_ID.
+ * Login via API central (Lovable). Sem CENTRAL_ADMIN_API_BASE / SITE_ID o painel mostra instruções
+ * e não submete pedidos — o resto do site (blog, SEO) não depende disto.
  */
-import { getCentralConfig } from '../../lib/central-admin-api';
+import { getCentralConfig, isCentralAdminConfigured } from '../../lib/central-admin-api';
 import {
 	ADMIN_SESSION_COOKIE,
 	centralAdminLogin,
@@ -15,13 +16,20 @@ import {
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 horas
 
 const cfg = getCentralConfig();
+const centralConfigured = isCentralAdminConfigured();
 const siteIdHint =
 	(typeof import.meta.env.PUBLIC_SITE_ID === 'string' && import.meta.env.PUBLIC_SITE_ID.trim()) ||
 	cfg?.siteId ||
 	'';
 
 const session = Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-if (session && (await isValidAdminSession(session))) {
+
+/** Cookie antigo sem API configurada — evita estado estranho no browser. */
+if (!centralConfigured && session) {
+	Astro.cookies.delete(ADMIN_SESSION_COOKIE, { path: '/' });
+}
+
+if (centralConfigured && session && (await isValidAdminSession(session))) {
 	return Astro.redirect((await isInitialSetupPending(session)) ? '/admin/setup' : '/admin/dashboard');
 }
 
@@ -35,10 +43,11 @@ if (Astro.request.method === 'POST') {
 	const username = form.get('username')?.toString().trim() ?? '';
 	const password = form.get('password')?.toString() ?? '';
 
-	if (!username || !password) {
+	if (!centralConfigured) {
+		error =
+			'O painel admin não está ligado à API central. Configure CENTRAL_ADMIN_API_BASE e SITE_ID nas variáveis de ambiente (ex.: Vercel → Settings → Environment Variables) e volte a carregar esta página.';
+	} else if (!username || !password) {
 		error = 'Informe usuário e senha.';
-	} else if (!cfg) {
-		error = 'API central não configurada (CENTRAL_ADMIN_API_BASE e SITE_ID).';
 	} else {
 		const result = await centralAdminLogin(username, password);
 		if (!result.ok) {
@@ -75,6 +84,7 @@ if (Astro.request.method === 'POST') {
 			min-height: 100dvh;
 			align-items: center;
 			justify-content: center;
+			padding: 1rem;
 		}
 		.card {
 			background: #fff;
@@ -82,11 +92,29 @@ if (Astro.request.method === 'POST') {
 			border-radius: 12px;
 			padding: 2.5rem 2rem;
 			width: 100%;
-			max-width: 420px;
+			max-width: 440px;
 			box-shadow: 0 4px 24px rgba(0,0,0,.06);
 		}
 		h1 { margin: 0 0 .25rem; font-size: 1.4rem; color: #0f172a; }
-		.subtitle { margin: 0 0 2rem; font-size: .875rem; color: #64748b; }
+		.subtitle { margin: 0 0 1.25rem; font-size: .875rem; color: #64748b; line-height: 1.45; }
+		.config-help {
+			margin: 0 0 1.5rem;
+			padding: 1rem 1.1rem;
+			background: #f1f5f9;
+			border: 1px solid #cbd5e1;
+			border-radius: 10px;
+			color: #334155;
+			font-size: .875rem;
+			line-height: 1.55;
+		}
+		.config-help h2 {
+			margin: 0 0 .5rem;
+			font-size: .9375rem;
+			font-weight: 700;
+			color: #0f172a;
+		}
+		.config-help ol { margin: .5rem 0 0 1.1rem; padding: 0; }
+		.config-help li { margin-bottom: .35rem; }
 		label { display: block; font-size: .8125rem; font-weight: 600; color: #374151; margin-bottom: .4rem; }
 		input[type="text"], input[type="password"] {
 			width: 100%; padding: .6rem .75rem;
@@ -94,8 +122,14 @@ if (Astro.request.method === 'POST') {
 			font-size: 1rem; outline: none;
 			transition: border-color .15s;
 		}
-		input:focus { border-color: #2337ff; box-shadow: 0 0 0 3px rgba(35,55,255,.12); }
+		fieldset:disabled input {
+			background: #f9fafb;
+			color: #6b7280;
+			cursor: not-allowed;
+		}
+		input:focus:not(:disabled) { border-color: #2337ff; box-shadow: 0 0 0 3px rgba(35,55,255,.12); }
 		.field { margin-bottom: 1rem; }
+		fieldset { border: none; margin: 0; padding: 0; }
 		button {
 			margin-top: .5rem; width: 100%;
 			background: #2337ff; color: #fff;
@@ -104,12 +138,17 @@ if (Astro.request.method === 'POST') {
 			font-weight: 600; cursor: pointer;
 			transition: background .15s;
 		}
-		button:hover { background: #000d8a; }
+		button:hover:not(:disabled) { background: #000d8a; }
+		button:disabled {
+			background: #94a3b8;
+			cursor: not-allowed;
+		}
 		.error {
 			margin-top: 1rem; padding: .625rem .875rem;
 			background: #fef2f2; border: 1px solid #fecaca;
 			border-radius: 8px; color: #991b1b;
 			font-size: .8125rem;
+			line-height: 1.45;
 		}
 		.warning {
 			margin-top: 1rem; padding: .625rem .875rem;
@@ -131,54 +170,76 @@ if (Astro.request.method === 'POST') {
 <body>
 	<main class="card">
 		<h1>Admin</h1>
-		<p class="subtitle">Acesso restrito ao painel. Autenticação pela API central do projeto.</p>
-		{misconfigured && (
-			<div class="error" role="alert">
-				<strong>Configuração em falta:</strong> defina <code>CENTRAL_ADMIN_API_BASE</code> e{' '}
-				<code>SITE_ID</code> nas variáveis de ambiente (ex.: Vercel).
+		<p class="subtitle">
+			Acesso ao painel. O blog e as páginas públicas continuam a funcionar normalmente; só o login admin
+			precisa da API central quando a configurar.
+		</p>
+
+		{!centralConfigured && (
+			<div class="config-help" role="region" aria-labelledby="config-help-title">
+				<h2 id="config-help-title">Configurar o painel (opcional neste ambiente)</h2>
+				<p style="margin:0 0 .5rem">
+					As variáveis <code>CENTRAL_ADMIN_API_BASE</code> e <code>SITE_ID</code> estão vazias ou incompletas.
+					<strong>Não é um erro do site</strong> — apenas falta ligar o painel à tua API no Lovable.
+				</p>
+				<ol>
+					<li>No painel da Vercel (ou no <code>.env</code> local), defina a URL base da API e o ID do site.</li>
+					<li>Faça redeploy se alterar variáveis em produção.</li>
+					<li>Recarregue esta página — o formulário abaixo será ativado automaticamente.</li>
+				</ol>
+				{misconfigured && (
+					<p style="margin:.75rem 0 0; font-size:.8125rem; color:#64748b">
+						Foi redirecionado aqui ao tentar aceder a uma área protegida do admin sem estas variáveis.
+					</p>
+				)}
 			</div>
 		)}
+
 		{justConfigured && (
 			<div class="success" role="status">
 				Credenciais atualizadas na API central. Entre novamente com o <strong>novo utilizador e senha</strong>.
 			</div>
 		)}
-		{cfg && (
+
+		{centralConfigured && (
 			<div class="warning" role="status">
 				<strong>Site:</strong> <code>{siteIdHint}</code>
 				<br />
-				Primeiro acesso: após login válido, pode ser pedido que defina utilizador e senha definitivos — estes são
-				enviados de volta à API central.
+				Primeiro acesso: após login válido, pode ser pedido que defina utilizador e senha definitivos na API
+				central.
 			</div>
 		)}
+
 		<form method="POST" autocomplete="on">
-			<div class="field">
-				<label for="username">Usuário</label>
-				<input
-					id="username"
-					name="username"
-					type="text"
-					autocomplete="username"
-					required
-					autofocus
-				/>
-			</div>
-			<div class="field">
-				<label for="password">Senha</label>
-				<input
-					id="password"
-					name="password"
-					type="password"
-					autocomplete="current-password"
-					placeholder="••••••••"
-					required
-					aria-describedby={error ? 'login-error' : undefined}
-				/>
-			</div>
-			{error && (
-				<div id="login-error" class="error" role="alert">{error}</div>
-			)}
-			<button type="submit">Entrar</button>
+			<fieldset disabled={!centralConfigured}>
+				<div class="field">
+					<label for="username">Usuário</label>
+					<input
+						id="username"
+						name="username"
+						type="text"
+						autocomplete="username"
+						required
+						autofocus={centralConfigured}
+					/>
+				</div>
+				<div class="field">
+					<label for="password">Senha</label>
+					<input
+						id="password"
+						name="password"
+						type="password"
+						autocomplete="current-password"
+						placeholder="••••••••"
+						required
+						aria-describedby={error ? 'login-error' : undefined}
+					/>
+				</div>
+				{error && (
+					<div id="login-error" class="error" role="alert">{error}</div>
+				)}
+				<button type="submit">Entrar</button>
+			</fieldset>
 		</form>
 	</main>
 	<script is:inline>

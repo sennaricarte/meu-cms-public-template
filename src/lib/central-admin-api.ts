@@ -15,6 +15,11 @@
 
 export type CentralConfig = { base: string; siteId: string };
 
+/** True quando `CENTRAL_ADMIN_API_BASE` e `SITE_ID` estão definidos (login admin não quebra o site se for false). */
+export function isCentralAdminConfigured(): boolean {
+	return getCentralConfig() !== null;
+}
+
 export function getCentralConfig(): CentralConfig | null {
 	const baseRaw =
 		typeof import.meta.env.CENTRAL_ADMIN_API_BASE === 'string' ? import.meta.env.CENTRAL_ADMIN_API_BASE.trim() : '';

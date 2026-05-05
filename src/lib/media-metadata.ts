@@ -1,3 +1,8 @@
+/**
+ * Metadados de mídia (alt, title, etc.) para o painel e conteúdo.
+ * Ficheiro local `src/data/media-metadata.json` apenas — sem API central —
+ * para leituras rápidas e impacto mínimo em performance.
+ */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 

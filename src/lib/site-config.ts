@@ -1,3 +1,8 @@
+/**
+ * Configuração pública do site (SEO, URLs, títulos).
+ * Continua a ser lida de `src/data/config.json` no próprio Astro — sem chamadas à API central —
+ * para manter páginas rápidas (Core Web Vitals) e metadados estáveis no build.
+ */
 type SiteConfig = {
 	title: string;
 	description: string;
