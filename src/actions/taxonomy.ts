@@ -68,7 +68,7 @@ export const taxonomy = {
 		accept: 'json',
 		input: addInputSchema,
 		handler: async ({ name, slug }, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const items = await readCategories();
 			const key = normSlug(slug);
 			if (items.some((x) => normSlug(x.slug) === key)) {
@@ -89,7 +89,7 @@ export const taxonomy = {
 		accept: 'json',
 		input: z.object({ id: idSchema }),
 		handler: async ({ id }, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const items = await readCategories();
 			const next = items.filter((x) => x.id !== id);
 			const removed = next.length !== items.length;
@@ -110,7 +110,7 @@ export const taxonomy = {
 			ogImage: z.string().max(500),
 		}),
 		handler: async (input, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const items = await readCategories();
 			const idx = items.findIndex((x) => x.id === input.id);
 			if (idx === -1) {
@@ -135,7 +135,7 @@ export const taxonomy = {
 		accept: 'json',
 		input: addInputSchema,
 		handler: async ({ name, slug }, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const items = await readTaxonomyFile(TAGS_JSON);
 			const key = normSlug(slug);
 			if (items.some((x) => normSlug(x.slug) === key)) {
@@ -156,7 +156,7 @@ export const taxonomy = {
 		accept: 'json',
 		input: z.object({ id: idSchema }),
 		handler: async ({ id }, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const items = await readTaxonomyFile(TAGS_JSON);
 			const next = items.filter((x) => x.id !== id);
 			const removed = next.length !== items.length;

@@ -1,47 +1,49 @@
 /**
- * Sessão do painel /admin: cookie `admin_session` = HMAC com utilizador + segredo
- * definidos em src/data/admin-config.json (via src/lib/admin-config.ts).
+ * Sessão do painel /admin: cookie `admin_session` = token opaco emitido pela API central (Lovable).
  */
 
 import type { AstroCookies } from 'astro';
-import { createHmac, timingSafeEqual } from 'node:crypto';
-import { getSigningCredentials, isInitialSetupPending, usesFallbackAdminCredentials } from './admin-config';
+import { timingSafeEqual } from 'node:crypto';
+import { validateCentralSession } from './central-admin-api';
 
 export const ADMIN_SESSION_COOKIE = 'admin_session';
 
 export {
-	getAdminCredentials,
-	getSigningCredentials,
-	isBootstrapPending,
-	isInitialSetupPending,
-	usesFallbackAdminCredentials,
-} from './admin-config';
+	centralAdminCompleteSetup,
+	centralAdminLogin,
+	getCentralConfig,
+	validateCentralSession,
+} from './central-admin-api';
 
-/** Gera o valor esperado do cookie (após login bem-sucedido). */
-export function getAdminSessionTokenValue(): string {
-	const { user, secret } = getSigningCredentials();
-	return createHmac('sha256', secret).update('blogonauta:admin:session:' + user).digest('hex');
+/** Valida o token junto da API central. */
+export async function isValidAdminSession(token: string | undefined | null): Promise<boolean> {
+	const r = await validateCentralSession(token);
+	if (r.ok !== true) return false;
+	return r.valid === true;
 }
 
-export function isValidAdminSession(token: string | undefined | null): boolean {
-	const expected = getAdminSessionTokenValue();
-	if (!token) return false;
-	try {
-		const a = Buffer.from(token, 'utf8');
-		const b = Buffer.from(expected, 'utf8');
-		if (a.length !== b.length) return false;
-		return timingSafeEqual(a, b);
-	} catch {
-		return false;
-	}
+/** True quando a API indica primeiro acesso / configuração pendente. */
+export async function isInitialSetupPending(sessionToken: string | undefined | null): Promise<boolean> {
+	const r = await validateCentralSession(sessionToken);
+	if (r.ok !== true) return false;
+	if (r.valid !== true) return false;
+	return r.setupRequired === true;
 }
 
-/** @deprecated Use `!isInitialSetupPending()`. */
-export function adminEnvConfigured(): boolean {
-	return !isInitialSetupPending();
+export async function isBootstrapPending(sessionToken: string | undefined | null): Promise<boolean> {
+	return isInitialSetupPending(sessionToken);
 }
 
-/** Comparação em tempo aproximadamente constante para user/senha no login. */
+export async function usesFallbackAdminCredentials(sessionToken: string | undefined | null): Promise<boolean> {
+	return isInitialSetupPending(sessionToken);
+}
+
+/** @deprecated Use `!(await isInitialSetupPending(...))`. */
+export async function adminEnvConfigured(sessionToken: string | undefined | null): Promise<boolean> {
+	return !(await isInitialSetupPending(sessionToken));
+}
+
+/** Comparação em tempo aproximadamente constante (útil para comparar tokens locais). */
 export function timingSafeStringEq(a: string, b: string): boolean {
 	try {
 		const ba = Buffer.from(a, 'utf8');
@@ -53,9 +55,9 @@ export function timingSafeStringEq(a: string, b: string): boolean {
 	}
 }
 
-/** Para Astro Actions: falha o pedido se não houver sessão admin válida. */
-export function requireAdminCookies(cookies: AstroCookies): void {
-	if (!isValidAdminSession(cookies.get(ADMIN_SESSION_COOKIE)?.value)) {
+export async function requireAdminCookies(cookies: AstroCookies): Promise<void> {
+	const token = cookies.get(ADMIN_SESSION_COOKIE)?.value;
+	if (!(await isValidAdminSession(token))) {
 		throw new Error('Não autorizado.');
 	}
 }

@@ -2,16 +2,16 @@
 export const prerender = false;
 
 /**
- * Configuração inicial — envio para POST /api/update-config (hash gravado em admin-config.json).
+ * Configuração inicial — POST /api/update-config envia dados à API central (Lovable).
  */
-import { isInitialSetupPending } from '../../lib/admin-config';
-import { ADMIN_SESSION_COOKIE, isValidAdminSession } from '../../lib/admin-session';
+import { ADMIN_SESSION_COOKIE, isInitialSetupPending, isValidAdminSession } from '../../lib/admin-session';
 
-if (!isValidAdminSession(Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value)) {
+const session = Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+if (!(await isValidAdminSession(session))) {
 	return Astro.redirect('/admin/login');
 }
 
-if (!isInitialSetupPending()) {
+if (!(await isInitialSetupPending(session))) {
 	return Astro.redirect('/admin/dashboard');
 }
 ---
@@ -72,8 +72,8 @@ if (!isInitialSetupPending()) {
 	<main class="card">
 		<h1>Configuração inicial</h1>
 		<p class="subtitle">
-			Escolha o utilizador e a senha definitivos. Os dados são guardados em
-			<code>src/data/admin-config.json</code> (apenas hashes). Inclua este ficheiro nos backups.
+			Defina o utilizador e a senha definitivos. Os dados são enviados à <strong>API central</strong> (base de dados
+			no Lovable) — não são guardados neste repositório.
 		</p>
 		<form method="POST" action="/api/update-config">
 			<div class="field">

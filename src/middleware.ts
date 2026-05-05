@@ -1,6 +1,6 @@
 import { defineMiddleware } from 'astro:middleware';
-import { isInitialSetupPending } from './lib/admin-config';
-import { ADMIN_SESSION_COOKIE, isValidAdminSession } from './lib/admin-session';
+import { getCentralConfig } from './lib/central-admin-api';
+import { ADMIN_SESSION_COOKIE, isInitialSetupPending, isValidAdminSession } from './lib/admin-session';
 
 const LOGIN = '/admin/login';
 
@@ -30,10 +30,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		return next();
 	}
 
+	if (!getCentralConfig()) {
+		if (context.url.pathname.startsWith('/api/') || context.url.pathname.startsWith('/_actions')) {
+			return new Response(
+				JSON.stringify({
+					error: 'Configure CENTRAL_ADMIN_API_BASE e SITE_ID para o painel admin.',
+				}),
+				{
+					status: 503,
+					headers: { 'Content-Type': 'application/json' },
+				},
+			);
+		}
+		return context.redirect('/admin/login?misconfigured=1');
+	}
+
 	const pathname = context.url.pathname;
 	const token = context.cookies.get(ADMIN_SESSION_COOKIE)?.value;
 
-	if (!isValidAdminSession(token)) {
+	if (!(await isValidAdminSession(token))) {
 		if (pathname.startsWith('/api/') || pathname.startsWith('/_actions')) {
 			return new Response(JSON.stringify({ error: 'Não autorizado. Faça login no painel admin.' }), {
 				status: 401,
@@ -44,13 +59,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	}
 
 	if (isSetupPath(pathname)) {
-		if (!isInitialSetupPending()) {
+		if (!(await isInitialSetupPending(token))) {
 			return context.redirect('/admin/dashboard');
 		}
 		return next();
 	}
 
-	if (isInitialSetupPending()) {
+	if (await isInitialSetupPending(token)) {
 		if (pathname.startsWith('/api/')) {
 			if (pathname !== '/api/update-config') {
 				return new Response(

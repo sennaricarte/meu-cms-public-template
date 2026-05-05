@@ -25,7 +25,7 @@ const trimmedActionLabel = sectionActionLabel?.trim() ?? '';
 const hasSectionTitle = trimmedSectionTitle.length > 0;
 const hasSectionAction = trimmedActionHref.length > 0 && trimmedActionLabel.length > 0;
 
-if (!isValidAdminSession(Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value)) {
+if (!(await isValidAdminSession(Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value))) {
 	return Astro.redirect('/admin/login');
 }
 

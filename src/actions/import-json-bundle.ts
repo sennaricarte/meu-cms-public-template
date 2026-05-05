@@ -96,7 +96,7 @@ export const importBlogJsonBundle = defineAction({
 		destinationCategory: z.string().trim().max(120).optional(),
 	}),
 	handler: async ({ jsonFile, destinationCategory }, context) => {
-		requireAdminCookies(context.cookies);
+		await requireAdminCookies(context.cookies);
 		await mkdir(blogDir, { recursive: true });
 
 		if (jsonFile.size > MAX_JSON_BYTES) {

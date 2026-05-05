@@ -1,8 +1,0 @@
-{
-	"v": 1,
-	"username": "admin",
-	"passwordSaltHex": "626c6f676f6e617574612d61646d696e2d73616c742d7631",
-	"passwordHashHex": "e616e3b6bd6361e395b57c1f28d19a4e3f5c348e0383f7990388c6bde8d05f13019df341234fea0cc89b825816b02bed1e16551f711e99d02422af55a3cb7ec5",
-	"sessionSecret": "blogonauta-default-session-secret-v1-min-16chars",
-	"setupCompleted": false
-}

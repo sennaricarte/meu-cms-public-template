@@ -2,38 +2,33 @@
 export const prerender = false;
 
 /**
- * Login apenas contra src/data/admin-config.json (hashes). Sem env nem APIs externas.
+ * Login via API central (Lovable): credenciais validadas remotamente com SITE_ID.
  */
-import {
-	DOCUMENTED_INITIAL_PASSWORD_HINT,
-	isInitialSetupPending,
-	loadAdminConfig,
-	verifyAdminLogin,
-} from '../../lib/admin-config';
+import { getCentralConfig } from '../../lib/central-admin-api';
 import {
 	ADMIN_SESSION_COOKIE,
-	getAdminSessionTokenValue,
+	centralAdminLogin,
+	isInitialSetupPending,
 	isValidAdminSession,
 } from '../../lib/admin-session';
 
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 horas
 
-let bannerUsername = 'admin';
-try {
-	bannerUsername = loadAdminConfig().username;
-} catch {
-	/* ficheiro inválido ou ausente — mensagem genérica */
-}
+const cfg = getCentralConfig();
+const siteIdHint =
+	(typeof import.meta.env.PUBLIC_SITE_ID === 'string' && import.meta.env.PUBLIC_SITE_ID.trim()) ||
+	cfg?.siteId ||
+	'';
 
 const session = Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-if (isValidAdminSession(session)) {
-	return Astro.redirect(isInitialSetupPending() ? '/admin/setup' : '/admin/dashboard');
+if (session && (await isValidAdminSession(session))) {
+	return Astro.redirect((await isInitialSetupPending(session)) ? '/admin/setup' : '/admin/dashboard');
 }
 
 const justConfigured = Astro.url.searchParams.get('configured') === '1';
+const misconfigured = Astro.url.searchParams.get('misconfigured') === '1';
 
 let error = '';
-const setupPending = isInitialSetupPending();
 
 if (Astro.request.method === 'POST') {
 	const form = await Astro.request.formData();
@@ -42,18 +37,22 @@ if (Astro.request.method === 'POST') {
 
 	if (!username || !password) {
 		error = 'Informe usuário e senha.';
-	} else if (!verifyAdminLogin(username, password)) {
-		error = 'Usuário ou senha inválidos.';
+	} else if (!cfg) {
+		error = 'API central não configurada (CENTRAL_ADMIN_API_BASE e SITE_ID).';
 	} else {
-		const token = getAdminSessionTokenValue();
-		Astro.cookies.set(ADMIN_SESSION_COOKIE, token, {
-			httpOnly: true,
-			path: '/',
-			maxAge: COOKIE_MAX_AGE,
-			sameSite: 'strict',
-			secure: import.meta.env.PROD,
-		});
-		return Astro.redirect(setupPending ? '/admin/setup' : '/admin/dashboard');
+		const result = await centralAdminLogin(username, password);
+		if (!result.ok) {
+			error = result.error;
+		} else {
+			Astro.cookies.set(ADMIN_SESSION_COOKIE, result.sessionToken, {
+				httpOnly: true,
+				path: '/',
+				maxAge: COOKIE_MAX_AGE,
+				sameSite: 'strict',
+				secure: import.meta.env.PROD,
+			});
+			return Astro.redirect(result.setupRequired ? '/admin/setup' : '/admin/dashboard');
+		}
 	}
 }
 ---
@@ -83,7 +82,7 @@ if (Astro.request.method === 'POST') {
 			border-radius: 12px;
 			padding: 2.5rem 2rem;
 			width: 100%;
-			max-width: 380px;
+			max-width: 420px;
 			box-shadow: 0 4px 24px rgba(0,0,0,.06);
 		}
 		h1 { margin: 0 0 .25rem; font-size: 1.4rem; color: #0f172a; }
@@ -117,30 +116,39 @@ if (Astro.request.method === 'POST') {
 			background: #fffbeb; border: 1px solid #fcd34d;
 			border-radius: 8px; color: #92400e;
 			font-size: .8125rem;
+			line-height: 1.45;
 		}
 		.success {
 			margin-top: 1rem; padding: .625rem .875rem;
 			background: #ecfdf5; border: 1px solid #6ee7b7;
 			border-radius: 8px; color: #065f46;
 			font-size: .8125rem;
+			line-height: 1.45;
 		}
-		code { font-size: .8125em; }
+		code { font-size: .8125em; word-break: break-all; }
 	</style>
 </head>
 <body>
 	<main class="card">
 		<h1>Admin</h1>
-		<p class="subtitle">Acesso restrito ao painel.</p>
-		{justConfigured && (
-			<div class="success" role="status">
-				Configuração inicial concluída. Entre com o seu novo utilizador e senha.
+		<p class="subtitle">Acesso restrito ao painel. Autenticação pela API central do projeto.</p>
+		{misconfigured && (
+			<div class="error" role="alert">
+				<strong>Configuração em falta:</strong> defina <code>CENTRAL_ADMIN_API_BASE</code> e{' '}
+				<code>SITE_ID</code> nas variáveis de ambiente (ex.: Vercel).
 			</div>
 		)}
-		{setupPending && (
+		{justConfigured && (
+			<div class="success" role="status">
+				Credenciais atualizadas na API central. Entre novamente com o <strong>novo utilizador e senha</strong>.
+			</div>
+		)}
+		{cfg && (
 			<div class="warning" role="status">
-				<strong>Primeiro acesso:</strong> utilize o utilizador <code>{bannerUsername}</code> e a senha documentada
-				<code>{DOCUMENTED_INITIAL_PASSWORD_HINT}</code> (hash guardado em <code>src/data/admin-config.json</code>). Depois
-				defina credenciais definitivas na página de configuração.
+				<strong>Site:</strong> <code>{siteIdHint}</code>
+				<br />
+				Primeiro acesso: após login válido, pode ser pedido que defina utilizador e senha definitivos — estes são
+				enviados de volta à API central.
 			</div>
 		)}
 		<form method="POST" autocomplete="on">

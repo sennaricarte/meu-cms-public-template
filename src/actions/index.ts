@@ -62,7 +62,7 @@ export const server = {
 	 */
 	listPosts: defineAction({
 		handler: async (_, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const entries = await readdir(BLOG_CONTENT_DIR, { withFileTypes: true });
 			const files = entries
 				.filter((e) => e.isFile() && /\.mdx?$/.test(e.name))
@@ -82,7 +82,7 @@ export const server = {
 			filename: z.string().regex(SAFE_FILENAME, 'Nome de arquivo inválido.'),
 		}),
 		handler: async ({ filename }, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const content = await readFile(join(BLOG_CONTENT_DIR, filename), 'utf-8');
 			return { filename, content };
 		},
@@ -97,7 +97,7 @@ export const server = {
 			relativePath: z.string().regex(SAFE_PAGES_REL_PATH, 'Caminho do ficheiro inválido.'),
 		}),
 		handler: async ({ relativePath }, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			return await loadStaticPageForEditor(relativePath);
 		},
 	}),
@@ -122,7 +122,7 @@ export const server = {
 			body: z.string().max(2_000_000),
 		}),
 		handler: async (input, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const updatedDate = new Date().toISOString().slice(0, 10);
 			const content = formatStaticPageMarkdown({
 				title: input.title.trim(),
@@ -192,7 +192,7 @@ export const server = {
 			},
 			context,
 		) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const normalizedTags = tags.map((t) => t.trim()).filter(Boolean);
 			const categoryTrim = category?.trim();
 			const updatedDate = new Date().toISOString().split('T')[0];
@@ -238,7 +238,7 @@ export const server = {
 			filename: z.string().regex(SAFE_FILENAME, 'Nome de arquivo inválido.'),
 		}),
 		handler: async ({ filename }, context) => {
-			requireAdminCookies(context.cookies);
+			await requireAdminCookies(context.cookies);
 			const target = join(BLOG_CONTENT_DIR, filename);
 			await unlink(target);
 			return { deleted: filename };

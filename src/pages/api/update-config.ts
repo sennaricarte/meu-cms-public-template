@@ -1,16 +1,15 @@
 /**
- * POST /api/update-config — define utilizador e senha definitivos após primeiro acesso.
- * FormData: username, password, confirm (requer sessão admin válida).
+ * POST /api/update-config — envia novas credenciais para a API central (primeiro acesso).
  */
 import type { APIRoute } from 'astro';
-import { applyAdminConfigUpdate } from '../../lib/admin-config';
+import { centralAdminCompleteSetup } from '../../lib/central-admin-api';
 import { ADMIN_SESSION_COOKIE, isValidAdminSession } from '../../lib/admin-session';
 
 export const prerender = false;
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-	const token = cookies.get(ADMIN_SESSION_COOKIE)?.value;
-	if (!isValidAdminSession(token)) {
+	const sessionToken = cookies.get(ADMIN_SESSION_COOKIE)?.value;
+	if (!(await isValidAdminSession(sessionToken))) {
 		return new Response(JSON.stringify({ error: 'Não autorizado.' }), {
 			status: 401,
 			headers: { 'Content-Type': 'application/json' },
@@ -55,7 +54,13 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 		});
 	}
 
-	const result = applyAdminConfigUpdate(username, password);
+	const result = await centralAdminCompleteSetup({
+		sessionToken: sessionToken!,
+		username,
+		password,
+		passwordConfirm: confirm,
+	});
+
 	if (!result.ok) {
 		return new Response(JSON.stringify({ error: result.error }), {
 			status: 400,

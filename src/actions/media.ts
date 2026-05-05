@@ -12,7 +12,7 @@ export const deleteMediaFile = defineAction({
 		filename: z.string().regex(SAFE_MEDIA_FILENAME, 'Nome de arquivo inválido.'),
 	}),
 	handler: async ({ filename }, context) => {
-		requireAdminCookies(context.cookies);
+		await requireAdminCookies(context.cookies);
 		const target = join(process.cwd(), 'public', 'uploads', filename);
 		await unlink(target);
 		return { deleted: filename };

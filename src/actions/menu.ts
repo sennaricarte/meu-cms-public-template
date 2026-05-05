@@ -37,7 +37,7 @@ export const saveMenu = defineAction({
 		}),
 	]),
 	handler: async (input, context) => {
-		requireAdminCookies(context.cookies);
+		await requireAdminCookies(context.cookies);
 
 		if (!Array.isArray(input.items)) {
 			throw new Error('Os dados recebidos não são um array de itens. Gravação cancelada.');

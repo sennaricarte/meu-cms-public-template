@@ -60,7 +60,7 @@ async function fileExists(path: string): Promise<boolean> {
 
 export const POST: APIRoute = async ({ request, cookies }) => {
 	const session = cookies.get(ADMIN_SESSION_COOKIE)?.value;
-	if (!isValidAdminSession(session)) {
+	if (!(await isValidAdminSession(session))) {
 		return json({ error: 'Não autorizado. Faça login no painel admin.' }, 401);
 	}
 

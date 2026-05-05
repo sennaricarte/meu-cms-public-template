@@ -22,7 +22,7 @@ function json(body: unknown, status = 200) {
 
 export const GET: APIRoute = async ({ cookies }) => {
 	const session = cookies.get(ADMIN_SESSION_COOKIE)?.value;
-	if (!isValidAdminSession(session)) {
+	if (!(await isValidAdminSession(session))) {
 		return json({ error: 'Não autorizado. Faça login no painel admin.' }, 401);
 	}
 

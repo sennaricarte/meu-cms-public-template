@@ -291,7 +291,7 @@ export const importWordpressPosts = defineAction({
 		destinationCategory: z.string().trim().max(120).optional(),
 	}),
 	handler: async ({ xmlFile, destinationCategory }, context) => {
-		requireAdminCookies(context.cookies);
+		await requireAdminCookies(context.cookies);
 		await mkdir(blogDir, { recursive: true });
 
 		const xmlText = await xmlFile.text();
