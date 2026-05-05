@@ -56,7 +56,7 @@ const { post } = Astro.props;
 			post.data.tags && post.data.tags.length > 0 && (
 				<div class="flex flex-wrap gap-1.5" aria-label="Tags do artigo">
 					{post.data.tags.slice(0, 2).map((tag) => (
-						<span class="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-[var(--accent)]">
+						<span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-[var(--accent-dark)]">
 							#{tag}
 						</span>
 					))}
@@ -68,11 +68,11 @@ const { post } = Astro.props;
 			{post.data.title}
 		</h3>
 
-		<p class="line-clamp-2 flex-1 text-sm leading-relaxed text-gray-500">
+		<p class="line-clamp-2 flex-1 text-sm leading-relaxed text-gray-600">
 			{post.data.description}
 		</p>
 
-		<div class="flex items-center gap-2 border-t border-gray-50 pt-3 text-xs text-gray-400">
+		<div class="flex items-center gap-2 border-t border-gray-100 pt-3 text-xs text-gray-600">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				class="h-3.5 w-3.5 shrink-0"

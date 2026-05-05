@@ -74,7 +74,7 @@ const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 		<Header />
 		<main id="main-content" class="mx-auto max-w-7xl space-y-8 px-6 py-10">
 			<header class="space-y-2">
-				<p class="text-xs font-bold uppercase tracking-[0.15em] text-gray-400">Blog</p>
+				<p class="text-xs font-bold uppercase tracking-[0.15em] text-gray-600">Blog</p>
 				<h1 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
 					Todos os artigos
 				</h1>
@@ -186,7 +186,7 @@ const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 			<section aria-labelledby="blog-posts-heading">
 				<h2
 					id="blog-posts-heading"
-					class="mb-6 text-xs font-bold uppercase tracking-[0.15em] text-gray-400"
+					class="mb-6 text-xs font-bold uppercase tracking-[0.15em] text-gray-600"
 				>
 					Artigos
 				</h2>
@@ -215,7 +215,7 @@ const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 							class:list={[
 								'rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
 								currentPage <= 1
-									? 'pointer-events-none border-gray-100 text-gray-300'
+									? 'pointer-events-none border-gray-200 text-gray-500'
 									: 'border-gray-200 text-gray-700 hover:border-[var(--accent)] hover:text-[var(--accent)]',
 							]}
 						>
@@ -243,7 +243,7 @@ const pagesToShow = Array.from({ length: totalPages }, (_, i) => i + 1);
 							class:list={[
 								'rounded-lg border px-3 py-2 text-sm font-medium transition-colors',
 								currentPage >= totalPages
-									? 'pointer-events-none border-gray-100 text-gray-300'
+									? 'pointer-events-none border-gray-200 text-gray-500'
 									: 'border-gray-200 text-gray-700 hover:border-[var(--accent)] hover:text-[var(--accent)]',
 							]}
 						>

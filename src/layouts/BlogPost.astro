@@ -113,7 +113,7 @@ const related = allPosts
 							{tags.map((tag) => (
 								<a
 									href={tagArchiveUrl(tag)}
-									class="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-[var(--accent)] transition-colors duration-200 hover:bg-[var(--accent)] hover:text-white"
+									class="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-[var(--accent-dark)] transition-colors duration-200 hover:bg-[var(--accent)] hover:text-white"
 									aria-label={`Ver todos os posts com a tag ${tag}`}
 								>
 									#{tag}
@@ -131,12 +131,12 @@ const related = allPosts
 					</h1>
 
 					<!-- Descrição / lead -->
-					<p class="mx-auto mb-6 max-w-2xl text-lg leading-relaxed text-gray-500">
+					<p class="mx-auto mb-6 max-w-2xl text-lg leading-relaxed text-gray-600">
 						{description}
 					</p>
 
 					<!-- Meta: data, atualização e autor -->
-					<div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-gray-400">
+					<div class="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-gray-600">
 						<span class="inline-flex items-center gap-1.5">
 							<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
 								<path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
@@ -192,7 +192,7 @@ const related = allPosts
 
 					<h2
 						id="related-heading"
-						class="mb-8 text-xs font-bold uppercase tracking-[0.15em] text-gray-400"
+						class="mb-8 text-xs font-bold uppercase tracking-[0.15em] text-gray-600"
 					>
 						Artigos relacionados
 					</h2>
@@ -227,7 +227,7 @@ const related = allPosts
 											{sharedTags.length > 0 && (
 												<div class="mb-2 flex flex-wrap gap-1" aria-label="Tags em comum">
 													{sharedTags.slice(0, 2).map((tag) => (
-														<span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-[var(--accent)]">
+														<span class="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-[var(--accent-dark)]">
 															#{tag}
 														</span>
 													))}
@@ -240,7 +240,7 @@ const related = allPosts
 											</h3>
 
 											<!-- Data -->
-											<div class="mt-auto pt-3 text-xs text-gray-400">
+											<div class="mt-auto pt-3 text-xs text-gray-600">
 												<FormattedDate date={post.data.pubDate} />
 											</div>
 										</div>
