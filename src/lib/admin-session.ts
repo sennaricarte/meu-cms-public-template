@@ -1,6 +1,7 @@
 /**
  * Sessão do painel /admin: cookie `admin_session` = HMAC estável a partir de
- * ADMIN_USER + ADMIN_PASS (+ SESSION_SECRET opcional).
+ * ADMIN_USER + ADMIN_PASSWORD (+ SESSION_SECRET opcional).
+ * ADMIN_PASS mantém compatibilidade com projetos antigos.
  */
 
 import type { AstroCookies } from 'astro';
@@ -8,25 +9,41 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 
 export const ADMIN_SESSION_COOKIE = 'admin_session';
 
-/** Lê credenciais do .env sem espaços acidentais (comuns em cópia/colar ou CRLF no Windows). */
-export function getAdminCredentials(): { user: string; pass: string; secret: string } | null {
+const DEFAULT_ADMIN_USER = 'admin';
+const DEFAULT_ADMIN_PASS = 'changeme';
+
+function rawAdminPasswordEnv(): unknown {
+	return import.meta.env.ADMIN_PASSWORD ?? import.meta.env.ADMIN_PASS;
+}
+
+/** Credenciais efetivas (env ou valores temporários por defeito em desenvolvimento / até configurar Vercel). */
+export function getAdminCredentials(): { user: string; pass: string; secret: string } {
 	const rawUser = import.meta.env.ADMIN_USER;
-	const rawPass = import.meta.env.ADMIN_PASS;
+	const rawPass = rawAdminPasswordEnv();
 	const rawSecret = import.meta.env.SESSION_SECRET;
-	const user = typeof rawUser === 'string' ? rawUser.trim() : '';
-	const pass = typeof rawPass === 'string' ? rawPass.trim() : '';
-	if (!user.length || !pass.length) return null;
+	const user =
+		typeof rawUser === 'string' && rawUser.trim().length > 0 ? rawUser.trim() : DEFAULT_ADMIN_USER;
+	const pass =
+		typeof rawPass === 'string' && rawPass.trim().length > 0
+			? rawPass.trim()
+			: DEFAULT_ADMIN_PASS;
 	const secret =
-		typeof rawSecret === 'string' && rawSecret.trim().length
-			? rawSecret.trim()
-			: pass;
+		typeof rawSecret === 'string' && rawSecret.trim().length ? rawSecret.trim() : pass;
 	return { user, pass, secret };
 }
 
+/** True se ADMIN_USER ou senha (ADMIN_PASSWORD / ADMIN_PASS) não estão definidos — usando valores temporários. */
+export function usesFallbackAdminCredentials(): boolean {
+	const rawUser = import.meta.env.ADMIN_USER;
+	const rawPass = rawAdminPasswordEnv();
+	const hasUser = typeof rawUser === 'string' && rawUser.trim().length > 0;
+	const hasPass = typeof rawPass === 'string' && rawPass.trim().length > 0;
+	return !hasUser || !hasPass;
+}
+
 /** Gera o valor esperado do cookie (após login bem-sucedido). */
-export function getAdminSessionTokenValue(): string | null {
+export function getAdminSessionTokenValue(): string {
 	const creds = getAdminCredentials();
-	if (!creds) return null;
 	return createHmac('sha256', creds.secret)
 		.update('blogonauta:admin:session:' + creds.user)
 		.digest('hex');
@@ -34,7 +51,7 @@ export function getAdminSessionTokenValue(): string | null {
 
 export function isValidAdminSession(token: string | undefined | null): boolean {
 	const expected = getAdminSessionTokenValue();
-	if (!expected || !token) return false;
+	if (!token) return false;
 	try {
 		const a = Buffer.from(token, 'utf8');
 		const b = Buffer.from(expected, 'utf8');
@@ -45,8 +62,9 @@ export function isValidAdminSession(token: string | undefined | null): boolean {
 	}
 }
 
+/** @deprecated Prefer `usesFallbackAdminCredentials()` ou verifique env diretamente. */
 export function adminEnvConfigured(): boolean {
-	return getAdminCredentials() !== null;
+	return !usesFallbackAdminCredentials();
 }
 
 /** Comparação em tempo aproximadamente constante para user/senha no login. */

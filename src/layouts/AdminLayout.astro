@@ -284,5 +284,12 @@ const linkActive = 'bg-violet-50 text-violet-600';
 				});
 			})();
 		</script>
+		<script is:inline>
+			try {
+				localStorage.setItem('blogonauta_admin_signed_in', '1');
+			} catch {
+				/* ignorado */
+			}
+		</script>
 	</body>
 </html>

@@ -1,77 +1,52 @@
 ---
+export const prerender = false;
+
 /**
- * /admin/login — autenticação via Edge Function (proxy).
+ * /admin/login — validação local contra ADMIN_USER e ADMIN_PASSWORD (sem proxy nem BD).
  */
 import {
 	ADMIN_SESSION_COOKIE,
 	getAdminSessionTokenValue,
 	isValidAdminSession,
+	timingSafeStringEq,
+	getAdminCredentials,
+	usesFallbackAdminCredentials,
 } from '../../lib/admin-session';
 
 const COOKIE_MAX_AGE = 60 * 60 * 8; // 8 horas
 
 const session = Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-if (adminEnvConfigured() && isValidAdminSession(session)) {
+if (isValidAdminSession(session)) {
 	return Astro.redirect('/admin/dashboard');
 }
 
 let error = '';
+const showDefaultCredsWarning = usesFallbackAdminCredentials();
 
 if (Astro.request.method === 'POST') {
 	const form = await Astro.request.formData();
-	const email = form.get('email')?.toString().trim() ?? '';
+	const username = form.get('username')?.toString().trim() ?? '';
 	const password = form.get('password')?.toString() ?? '';
-	const loginProxyUrl = import.meta.env.ADMIN_LOGIN_PROXY_URL?.toString().trim() ?? '';
-	const siteId = import.meta.env.SITE_ID?.toString().trim() ?? '';
 
-	if (!email || !password) {
-		error = 'Informe e-mail e senha.';
-	} else if (!loginProxyUrl || !siteId) {
-		error = 'Defina ADMIN_LOGIN_PROXY_URL e SITE_ID no ambiente.';
+	if (!username || !password) {
+		error = 'Informe usuário e senha.';
 	} else {
-		try {
-			const response = await fetch(loginProxyUrl, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					email,
-					password,
-					SITE_ID: siteId,
-				}),
+		const creds = getAdminCredentials();
+		const userOk = timingSafeStringEq(username, creds.user);
+		const passOk = timingSafeStringEq(password, creds.pass);
+
+		if (!userOk || !passOk) {
+			error = 'Usuário ou senha inválidos.';
+		} else {
+			const token = getAdminSessionTokenValue();
+			Astro.cookies.set(ADMIN_SESSION_COOKIE, token, {
+				httpOnly: true,
+				path: '/',
+				maxAge: COOKIE_MAX_AGE,
+				sameSite: 'strict',
+				secure: import.meta.env.PROD,
 			});
-
-			let payload: Record<string, unknown> | null = null;
-			try {
-				payload = (await response.json()) as Record<string, unknown>;
-			} catch {
-				payload = null;
-			}
-
-			const authenticated =
-				response.ok &&
-				(payload?.ok === true ||
-					payload?.success === true ||
-					payload?.authenticated === true ||
-					payload?.status === 'ok');
-
-			if (!authenticated) {
-				error = 'E-mail ou senha inválidos.';
-			} else {
-				const token = getAdminSessionTokenValue();
-				if (token) {
-					Astro.cookies.set(ADMIN_SESSION_COOKIE, token, {
-						httpOnly: true,
-						path: '/',
-						maxAge: COOKIE_MAX_AGE,
-						sameSite: 'strict',
-						secure: import.meta.env.PROD,
-					});
-					return Astro.redirect('/admin/dashboard');
-				}
-				error = 'Falha ao criar sessão. Verifique SESSION_SECRET.';
-			}
-		} catch {
-			error = 'Falha ao contactar o serviço de autenticação.';
+			return Astro.redirect('/admin/dashboard');
 		}
 	}
 }
@@ -143,13 +118,20 @@ if (Astro.request.method === 'POST') {
 	<main class="card">
 		<h1>Admin</h1>
 		<p class="subtitle">Acesso restrito ao painel.</p>
+		{showDefaultCredsWarning && (
+			<div class="warning" role="status">
+				<strong>Atenção:</strong> ADMIN_USER e/ou ADMIN_PASSWORD não estão definidos — está em uso o
+				utilizador <code>admin</code> e a senha temporária <code>changeme</code>. Configure as variáveis
+				no ambiente antes de produção.
+			</div>
+		)}
 		<form method="POST" autocomplete="on">
 			<div class="field">
-				<label for="email">E-mail</label>
+				<label for="username">Usuário</label>
 				<input
-					id="email"
-					name="email"
-					type="email"
+					id="username"
+					name="username"
+					type="text"
 					autocomplete="username"
 					required
 					autofocus
@@ -173,5 +155,12 @@ if (Astro.request.method === 'POST') {
 			<button type="submit">Entrar</button>
 		</form>
 	</main>
+	<script is:inline>
+		try {
+			localStorage.removeItem('blogonauta_admin_signed_in');
+		} catch {
+			/* ignorado */
+		}
+	</script>
 </body>
 </html>
