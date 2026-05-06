@@ -1,15 +1,33 @@
 // @ts-check
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import mdx        from '@astrojs/mdx';
 import sitemap    from '@astrojs/sitemap';
 import vercel     from '@astrojs/vercel';
 import { defineConfig, fontProviders } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+/** Mesmo `siteUrl` que `src/data/config.json` — primeiro commit já nasce com base para SEO/sitemap. */
+function readSiteUrlFromConfig() {
+	try {
+		const raw = readFileSync(join(__dirname, 'src', 'data', 'config.json'), 'utf8');
+		const j = JSON.parse(raw);
+		const u = typeof j.siteUrl === 'string' ? j.siteUrl.trim().replace(/\/+$/, '') : '';
+		if (u.startsWith('http://') || u.startsWith('https://')) return u;
+	} catch {
+		/* ignora */
+	}
+	return 'https://example.com';
+}
+
 // ─── URL raiz do site ─────────────────────────────────────────────────────────
-// Troque pelo domínio real antes de publicar.
-// Usado pelo sitemap, canonical URLs e Open Graph.
-const SITE = 'https://example.com';
+// Alinhada ao `config.json`; personalize no cliente após o provisionamento.
+const SITE = readSiteUrlFromConfig();
 
 // ─── Configuração de prioridade e changefreq por tipo de página ───────────────
 // Referência: https://www.sitemaps.org/protocol.html

@@ -1,7 +1,7 @@
 {
-	"siteName": "Astro Blog",
-	"siteUrl": "https://example.com/",
-	"siteDescription": "Welcome to my website!",
+	"siteName": "Blogonauta",
+	"siteUrl": "https://example.com",
+	"siteDescription": "Blog e site em Astro — personalize o nome, descrição e URL aqui após o provisionamento na conta do cliente. Este ficheiro faz parte do primeiro commit para o site não nascer vazio em SEO.",
 	"logoPath": "/favicon.svg",
-	"faviconPath": "/favicon.svg"
+	"faviconPath": "/favicon.ico"
 }

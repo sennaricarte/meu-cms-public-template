@@ -2,8 +2,9 @@
 export const prerender = false;
 
 /**
- * Login via API central (Lovable). Sem CENTRAL_ADMIN_API_BASE / SITE_ID o painel mostra instruções
- * e não submete pedidos — o resto do site (blog, SEO) não depende disto.
+ * Login via API central (Lovable). O painel admin **sempre** espera `CENTRAL_ADMIN_API_BASE` e `SITE_ID`
+ * (incluindo após provisionamento OAuth na conta do cliente). Sem elas: mensagem amigável, sem pedidos.
+ * SEO / páginas públicas usam `src/data/config.json` localmente — sem chamadas à API central.
  */
 import { getCentralConfig, isCentralAdminConfigured } from '../../lib/central-admin-api';
 import {
@@ -171,8 +172,9 @@ if (Astro.request.method === 'POST') {
 	<main class="card">
 		<h1>Admin</h1>
 		<p class="subtitle">
-			Acesso ao painel. O blog e as páginas públicas continuam a funcionar normalmente; só o login admin
-			precisa da API central quando a configurar.
+			O login do painel <strong>requer</strong> as variáveis <code>CENTRAL_ADMIN_API_BASE</code> e{' '}
+			<code>SITE_ID</code> no deploy do cliente (incluindo fluxos com OAuth). O blog e o SEO público usam
+			apenas ficheiros locais (<code>src/data/config.json</code>) — sem impacto na performance.
 		</p>
 
 		{!centralConfigured && (
@@ -180,7 +182,9 @@ if (Astro.request.method === 'POST') {
 				<h2 id="config-help-title">Configurar o painel (opcional neste ambiente)</h2>
 				<p style="margin:0 0 .5rem">
 					As variáveis <code>CENTRAL_ADMIN_API_BASE</code> e <code>SITE_ID</code> estão vazias ou incompletas.
-					<strong>Não é um erro do site</strong> — apenas falta ligar o painel à tua API no Lovable.
+					<strong>Não é um erro do site público</strong> — falta configurar o painel na API central (Lovable).
+					O provisionamento OAuth do cliente <strong>não substitui</strong> estas duas variáveis no ambiente
+					de deploy (ex.: Vercel).
 				</p>
 				<ol>
 					<li>No painel da Vercel (ou no <code>.env</code> local), defina a URL base da API e o ID do site.</li>

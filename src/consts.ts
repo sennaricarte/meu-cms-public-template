@@ -1,5 +1,13 @@
-// Place any global data in this file.
-// You can import this data from anywhere in your site by using the `import` keyword.
+/**
+ * Metadados globais do site (home, Header, RSS, etc.).
+ * Fonte única: `src/data/config.json` — versionado no primeiro commit para deploy local na conta do cliente.
+ */
+import configJson from './data/config.json';
+import { normalizeSiteConfig } from './lib/site-config';
 
-export const SITE_TITLE = 'Astro Blog';
-export const SITE_DESCRIPTION = 'Welcome to my website!';
+const site = normalizeSiteConfig(configJson);
+
+export const SITE_TITLE = site.siteName;
+export const SITE_DESCRIPTION = site.siteDescription;
+/** Origem canónica sem barra final — alinhada ao mesmo `config.json` usado em `astro.config.mjs`. */
+export const SITE_URL = site.siteUrl.replace(/\/+$/, '') || 'https://example.com';
